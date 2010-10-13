@@ -10,7 +10,7 @@ Stash Magic provides a very simple interface for dealing with file system attach
 
 This is still in Beta version.
 Documentation is comming soon.
-In the meantime, contact me on github if you have any question: http://github.com/mig-hub
+In the meantime, you can have a look at the specs to see how it's used or contact me on github if you have any question: http://github.com/mig-hub
 
 == Copyright
 
