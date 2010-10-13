@@ -16,11 +16,11 @@ DB = Sequel.sqlite
 
 require 'tempfile'
 
-require F.dirname(__FILE__)+'/../stash'
+require F.dirname(__FILE__)+'/stash_magic'
 
 class Treasure < ::Sequel::Model
   PUBLIC = F.expand_path(F.dirname(__FILE__)+'/public')
-  ::PainlessBackend::Stash.with_public_root(PUBLIC)
+  ::StashMagic.with_public_root(PUBLIC)
   
   plugin :schema
   set_schema do
@@ -43,7 +43,7 @@ class Treasure < ::Sequel::Model
 end
 
 class BadTreasure < ::Sequel::Model
-  include ::PainlessBackend::Stash
+  include ::StashMagic
   
   plugin :schema
   set_schema do
@@ -54,11 +54,14 @@ class BadTreasure < ::Sequel::Model
   create_table unless table_exists?
 end
 
+# Make temporary public folder
+D.mkdir(Treasure::PUBLIC) unless F.exists?(Treasure::PUBLIC)
+
 # =========
 # = Tests =
 # =========
 
-describe ::PainlessBackend::Stash do
+describe ::StashMagic do
   
   `convert rose: #{Treasure::PUBLIC}/rose.jpg` unless F.exists?(Treasure::PUBLIC+'/rose.jpg') # Use ImageMagick to build a tmp image to use
   `convert granite: #{Treasure::PUBLIC}/granite.gif` unless F.exists?(Treasure::PUBLIC+'/granite.gif') # Use ImageMagick to build a tmp image to use
@@ -191,17 +194,13 @@ describe ::PainlessBackend::Stash do
   
   it "Should not raise when updating the entry with blank string - which means the attachment is untouched" do
     @t = Treasure.create(:instructions => @pdf)
-    @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20973}
+    @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20956}
     F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==true
     @t.update(:instructions=>"")
-    @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20973}
+    @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20956}
     F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==true
   end
   
-  ::FileUtils.rm_rf(Treasure::PUBLIC+'/stash') if F.exists?(Treasure::PUBLIC+'/stash')
-  F.delete(Treasure::PUBLIC+'/rose.jpg') if F.exists?(Treasure::PUBLIC+'/rose.jpg')
-  F.delete(Treasure::PUBLIC+'/granite.gif') if F.exists?(Treasure::PUBLIC+'/granite.gif')
-  F.delete(Treasure::PUBLIC+'/rose.pdf') if F.exists?(Treasure::PUBLIC+'/rose.pdf')
-  F.delete(Treasure::PUBLIC+'/logo.pdf') if F.exists?(Treasure::PUBLIC+'/logo.pdf')
+  ::FileUtils.rm_rf(Treasure::PUBLIC) if F.exists?(Treasure::PUBLIC)
   
 end

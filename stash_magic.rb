@@ -164,7 +164,7 @@ module StashMagic
     # Include and declare public root in one go
     def with_public_root(location, into=nil)
       into ||= into_from_backtrace(caller)
-      into.__send__(:include, Stash)
+      into.__send__(:include, StashMagic)
       into.public_root = location
       into
     end
