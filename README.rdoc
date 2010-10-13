@@ -1,0 +1,17 @@
+= Stash Magic (BETA)
+
+Stash Magic provides a very simple interface for dealing with file system attachments in a database and help you with thumbnails or other styles via ImageMagick (hence, the name). Features are:
+
+- Many attachments per database entry
+- ImageMagick string builder
+- after_stash hook for creating thumbnails or other styles automatically when attachment is created or updated.
+- Specs for Sequel ORM but pretty seamless to adapt
+- Easy to understand (one file) module 
+
+This is still in Beta version.
+Documentation is comming soon.
+In the meantime, contact me on github if you have any question: http://github.com/mig-hub
+
+== Copyright
+
+(c) 2010 Mickael Riga - see MIT_LICENCE for details
