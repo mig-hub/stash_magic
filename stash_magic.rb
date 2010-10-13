@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'erb'
 
 # A replacement for our current attachment system
 # New requirements being:
@@ -19,7 +20,7 @@ module StashMagic
       # Setter
       def public_root=(location)
         @public_root = location
-        FU.mkdir_p(location+'/stash/'+self.name.to_s.underscore)
+        FU.mkdir_p(location+'/stash/'+self.name.to_s)
       end
       # Declare a stash entry
       def stash(name, options={})
@@ -72,7 +73,7 @@ module StashMagic
   # This could be a private method only used by file_url, but i keep it public just in case
   def file_path(full=false)
     raise "#{self.class}.public_root is not declared" if public_root.nil?
-    "#{public_root if full}/stash/#{self.class.to_s.underscore}/#{self.id || 'tmp'}"
+    "#{public_root if full}/stash/#{self.class.to_s}/#{self.id || 'tmp'}"
   end
      
   # Returns the url of an attachment in a specific style(original if nil)
@@ -90,7 +91,11 @@ module StashMagic
     title = send(attachment_name+'_tooltip') rescue nil
     alt = send(attachment_name+'_alternative_text') rescue nil
     html_attributes = {:src => file_url(attachment_name, style), :title => title, :alt => alt}.update(html_attributes)
-    "<img #{html_attributes.to_html_options} />"
+    html_attributes = html_attributes.map do |k,v|
+      %{#{k.to_s}="#{ERB::Util.h(v.to_s)}"}
+    end.join(' ')
+    
+    "<img #{html_attributes} />"
   end
   
   # ===============

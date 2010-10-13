@@ -5,8 +5,6 @@
 F = ::File
 D = ::Dir
 
-require 'ruby_ext'
-
 require 'rubygems'
 require 'bacon'
 Bacon.summary_on_exit
@@ -93,7 +91,7 @@ describe ::StashMagic do
   end
   
   it 'Should create stash and model folder when included' do
-    F.exists?(Treasure::PUBLIC+'/stash/treasure').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure').should==true
   end
   
   it "Should stash entries with Class::stash and have reflection" do
@@ -104,14 +102,14 @@ describe ::StashMagic do
   it "Should give instance its own file_path" do
     # Normal path
     @t = Treasure.create
-    @t.file_path.should=="/stash/treasure/#{@t.id}"
+    @t.file_path.should=="/stash/Treasure/#{@t.id}"
     # Anonymous path
-    Treasure.new.file_path.should=='/stash/treasure/tmp'
+    Treasure.new.file_path.should=='/stash/Treasure/tmp'
     # Normal path full
     @t = Treasure.create
-    @t.file_path(true).should==Treasure::PUBLIC+"/stash/treasure/#{@t.id}"
+    @t.file_path(true).should==Treasure::PUBLIC+"/stash/Treasure/#{@t.id}"
     # Anonymous path full
-    Treasure.new.file_path(true).should==Treasure::PUBLIC+'/stash/treasure/tmp'
+    Treasure.new.file_path(true).should==Treasure::PUBLIC+'/stash/Treasure/tmp'
   end
   
   it "Should always raise on file_path if public_root is not declared" do
@@ -126,55 +124,55 @@ describe ::StashMagic do
     # Original with no file - so we are not sure about extention
     Treasure.new.file_url(:map).should==nil
     # Original with file but not saved
-    Treasure.new(:map=>@img).file_url(:map).should=='/stash/treasure/tmp/map.jpg'
+    Treasure.new(:map=>@img).file_url(:map).should=='/stash/Treasure/tmp/map.jpg'
     # Style with file but not saved
-    Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='/stash/treasure/tmp/map.thumb.jpg' #not the right extention
+    Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='/stash/Treasure/tmp/map.thumb.jpg' #not the right extention
   end
   
   it "Should save the attachments when creating entry" do
     @t = Treasure.create(:map => @img, :instructions => @pdf)
     @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.jpg').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.stash_thumb.gif').should==false
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.stash_thumb.gif').should==false
   end
   
   it "Should update attachment when updating entry" do
     @t = Treasure.create(:map => @img).update(:map=>@img2)
     @t.map.should=={:name=>'map.gif',:type=>'image/gif',:size=>7037}
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.gif').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.jpg').should==false
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.gif').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==false
   end
   
   it "Should destroy its folder when destroying entry" do
     @t = Treasure.create(:map => @img)
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s).should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s).should==true
     @t.destroy
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s).should==false
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s).should==false
   end
   
   it "Should be able to remove attachments when column is set to nil" do
     @t = Treasure.create(:map => @img, :mappy => @img2)
     @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
     @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.jpg').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/mappy.gif').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/mappy.gif').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
     @t.update(:map=>nil)
     @t.map.should==nil
     @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.jpg').should==false
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/mappy.gif').should==true
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==false
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==false
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/mappy.gif').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==false
   end
   
   it "Should be able to build image tags" do
     @t = Treasure.create(:map => @img)
     tag = @t.build_image_tag(:map,nil,:alt => 'Amazing Map')
     tag.should.match(/^<img\s.+\s\/>$/)
-    tag.should.match(/\ssrc="\/stash\/treasure\/#{@t.id}\/map.jpg"\s/)
+    tag.should.match(/\ssrc="\/stash\/Treasure\/#{@t.id}\/map.jpg"\s/)
     tag.should.match(/\salt="Amazing Map"\s/)
     tag.should.match(/\stitle=""\s/)
   end
@@ -182,23 +180,23 @@ describe ::StashMagic do
   it "Should be able to handle validations" do
     @t = Treasure.new(:instructions => @pdf2)
     @t.valid?.should==false
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==false
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==false
     @t.set(:instructions => @pdf, :age => 8)
     @t.valid?.should==false
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==false
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==false
     @t.set(:age => 12)
     @t.valid?.should==true
     @t.save
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
   end
   
   it "Should not raise when updating the entry with blank string - which means the attachment is untouched" do
     @t = Treasure.create(:instructions => @pdf)
     @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20956}
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
     @t.update(:instructions=>"")
     @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20956}
-    F.exists?(Treasure::PUBLIC+'/stash/treasure/'+@t.id.to_s+'/instructions.pdf').should==true
+    F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
   end
   
   it "Should have ImageMagick string builder" do
