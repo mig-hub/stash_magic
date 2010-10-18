@@ -94,7 +94,7 @@ I just find it makes sense and saves one argument on some methods that are alrea
 
 Now if you really want to create styles, you need to have ImageMagick installed. ImageMagick is a very good and complete graphic library. You'll find more on the link below, but for the time being, just think of it as a Photoshop in command line:
 
-http://www.imagemagick.org/
+http://www.imagemagick.org
 
 Even though StashMagic provides a builder for ImageMagick scripts, I suggest you learn a little bit about them for the following reasons:
 
