@@ -156,12 +156,16 @@ More about gravity here:
 
 http://www.imagemagick.org/script/command-line-options.php#gravity
 
+== im_negate
+
+Simply negate the image
+
 = More about the builder
 
 Here a more complete example for the builder:
 
 	@treasure_instance.image_magick :portrait, 'mini.gif' do
-		im_write("-negate")
+		im_negate
   	im_crop(200,100,20,10)
   	im_resize(200, 100, '^', 'North')
 	end
@@ -198,6 +202,11 @@ The project is speced with
 - Bacon 1.1.0
 - Sequel 3.14.0
 - ImageMagick 6.5.8
+
+= Change Log
+
+0.0.1   Begins
+0.0.2   Add im_negate to the ImageMagick builder
 
 == Copyright
 

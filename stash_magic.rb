@@ -127,6 +127,9 @@ module StashMagic
   def im_crop(width, height, x, y)
     @image_magick_strings <<  "-crop #{width}x#{height}+#{x}+#{y} +repage"
   end
+  def im_negate
+    @image_magick_strings << '-negate'
+  end
   # ===================
   # = End ImageMagick =
   # ===================
