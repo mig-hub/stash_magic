@@ -5,12 +5,58 @@ Stash Magic provides a very simple interface for dealing with file system attach
 - Many attachments per database entry
 - ImageMagick string builder
 - after_stash hook for creating thumbnails or other styles automatically when attachment is created or updated.
-- Specs for Sequel ORM but pretty seamless to adapt
+- Specs for Sequel ORM but pretty easy to adapt
 - Easy to understand (one file) module 
 
 This is still in Beta version.
-Documentation is comming soon.
-In the meantime, you can have a look at the specs to see how it's used or contact me on github if you have any question: http://github.com/mig-hub
+
+= How to use
+
+First you have to require the module:
+
+	require 'stash_magic'
+	
+And then inside your model class, you have to include the module and declare where your public directory is:
+
+	class Treasure < ::Sequel::Model
+		include ::StashMagic
+		self.public_root = ::File.expand_path(::File.dirname(__FILE__)+'/public')
+	end
+	
+The module has a method to do both in one line though:
+
+	class Treasure < ::Sequel::Model
+		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+	end
+	
+After that, for each attachment you want, you need to have a column in the database as a string. And then you declare them with method Model#stash:
+
+	class Treasure < ::Sequel::Model
+		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+		
+		stash :pdf
+		stash :portrait
+	end
+	
+This method accepts an optional hash as a second argument which is not used by the module itself, but could be handy for you as you can have it in the stash reflection:
+
+	class Treasure < ::Sequel::Model
+		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+		
+		stash :pdf
+		stash :portrait, :accept_gif => false, :limit => 512000
+	end
+	
+The method Model::stash_reflection would return:
+
+	{ 
+		:pdf => {}, 
+		:portrait => {:accept_gif => false, :limit => 512000} 
+	}
+
+= More Details
+
+For more details, you can have a look at the specs to see how it's used or contact me on github if you have any question: http://github.com/mig-hub
 
 == Copyright
 
