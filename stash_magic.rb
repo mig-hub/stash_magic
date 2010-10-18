@@ -4,7 +4,7 @@ require 'erb'
 # A replacement for our current attachment system
 # New requirements being:
 # - More than one attachment per model
-# - Easiest way to deal with folders (a bit like on the_wall)
+# - Easiest way to deal with folders (a bit like on our internal blog: the_wall)
 # - Another way to deal with convert styles so that you can interract with it after saving the images (cropping for example)
 # - Some facilities for pre-defined ImageMagick scripts
 module StashMagic

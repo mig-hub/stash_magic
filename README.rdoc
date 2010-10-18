@@ -8,7 +8,11 @@ Stash Magic provides a very simple interface for dealing with file system attach
 - Specs for Sequel ORM but pretty easy to adapt
 - Easy to understand (one file) module 
 
-This is still in Beta version.
+This is still in Beta version built with simplicity in mind.
+Don't hesitate to contact me for any improvement, suggestion, or bug fixing.
+
+I've made the design choice not to build a Sequel plugin because I'd like StashMagic to work with other ORMs in the future.
+So any test or help is welcome.
 
 = How to use
 
@@ -34,8 +38,8 @@ After that, for each attachment you want, you need to have a column in the datab
 	class Treasure < ::Sequel::Model
 		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
 		
-		stash :pdf
-		stash :portrait
+		stash :map
+		stash :stamp
 	end
 	
 This method accepts an optional hash as a second argument which is not used by the module itself, but could be handy for you as you can have it in the stash reflection:
@@ -43,20 +47,157 @@ This method accepts an optional hash as a second argument which is not used by t
 	class Treasure < ::Sequel::Model
 		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
 		
-		stash :pdf
-		stash :portrait, :accept_gif => false, :limit => 512000
+		stash :map
+		stash :stamp, :accept_gif => false, :limit => 512000
 	end
 	
-The method Model::stash_reflection would return:
+The method Treasure.stash_reflection would return:
 
 	{ 
-		:pdf => {}, 
-		:portrait => {:accept_gif => false, :limit => 512000} 
+		:map => {}, 
+		:stamp => {:accept_gif => false, :limit => 512000} 
 	}
+	
+When building your html forms, just make sure that your stash inputs are of the type 'file', and StashMagic will deal with everything else. The getters will return a hash with the following values:
+
+	@treasure_instance.map    # { :name => 'map.pdf', :type => 'application/pdf', :size => 1024 }
+	@treasure_instance.stamp  # nil if there is no stamp yet
+	
+Please note that the file name will always be the name of the attachment with the extention of the file you've uploaded (pdf, jpg ...) 
+This makes StashMagic internals a lot easier for dealing with styles (ex: thumbnails) as we'll see later.
+	
+You can also use the setters to delete an attachment:
+
+	@treasure_instance.map = nil   # Will delete this attachment as expected
+	
+When you want to use attachment in your application, you can retrieve the file url like that:
+
+	@treasure_instance.file_url(:map)                # The original file
+	@treasure_instance.file_url(:map, 'thumb.gif')   # The picture in a thumb.gif style (see next chapter to learn about styles)
+	
+You might also want to do things on the server side like changing rights on the image or whatever. For that purpose, there is a third argument which is a boolean. When set to true, it will give you the absolute path to the file:
+
+	@treasure_instance.file_url(:map, nil, true)            # /absolute/path/to/public/stash/Treasure/1/map.pdf
+	@treasure_instance.file_url(:map, 'thumb.gif', true)    # /absolute/path/to/public/stash/Treasure/1/map.thumb.gif
+	
+= Thumbnails and Other Styles
+
+One of the main requirements of StashMagic was to provide a way to deal quite easily with styles, and to deal with them whenever you want to, not only automaticaly when you save an attachment. The reason for that last point is because I was working at the same time on a cropping tool and realized That I needed to be able to create styles whenever I wanted without changing the way my attachment manager works.
+
+The simpliest solution I came up with was to be quite strict with names. So far, when StashMagic asks for a style, what it needs is a suffix which contains the extention you want the style to be saved to.
+
+Say for example you have an attachment called :portrait and you want a version called "mini" which is gonna be a gif. Your style should be called:
+
+	mini.gif
+	
+I just find it makes sense and saves one argument on some methods that are already verbose.
+
+Now if you really want to create styles, you need to have ImageMagick installed. ImageMagick is a very good and complete graphic library. You'll find more on the link below, but for the time being, just think of it as a Photoshop in command line:
+
+ http://www.imagemagick.org/
+
+Even though StashMagic provides a builder for ImageMagick scripts, I suggest you learn a little bit about them for the following reasons:
+
+- This is not much harder than learning to make things with methods and arguments
+- It makes you able to use it on it's own
+- The builder is limited, not as complete as real ImageMagick ruby wrapper like RMagick
+- I like to believe it's fun as well (not only powerful)
+
+So for the couragous amongst you, here is the way you create a very simple style for the portrait attachment:
+
+	@treasure_instance.convert :portrait, '-resize 100x75', 'mini.gif'
+	
+The middle argument is the piece of script used in the main ImageMagick command called: convert
+It is everything that happens between the source and the destination (hence its position in the list of arguments).
+
+This will create your mini version of the portrait. The url for this image will be:
+
+ @treasure_instance.file_url(:portrait, 'mini.gif')
+
+If you master ImageMagick, you can really do a lot with that. Nevertheless here is what you can use, as I have to admit that some things like geometry are not easy to get the first time. Here is the so-called string builder:
+
+	@treasure_instance.image_magick :portrait, 'mini.gif' do
+    im_resize(100, 75)
+	end
+	
+Not really much easier huh ?!?
+
+Ok so in the builder, you can use some pre-defined operations (prefixed with 'im_' standing for ImageMagick) that will occur in the order you write them. It is quite limited for the moment, but I will complete the list in time. Here is that list:
+
+== im_write( string )
+
+This is the most simple one. It is for when you know how to write a piece of the script. For example you could use:
+
+	im_write("-negate")
+
+It will negate the image at this stage.
+
+== im_crop( width, height, x, y )
+
+Self explainatory as well, it will create a crop using the values provided.
+
+== im_resize( width, height, geometry_option=nil, gravity=nil )
+
+This one is a little bit more complicated than it sounds. You can play with options a lot. 
+
+First thing to try is to give only width and height but with one of them nil. This will resize only by width or height, but keeping the original ratio.
+
+If you do the same but with both values, you have to make sure that the ratio is the same as the original. Otherwise the resulting image will be streched to fit in the proportions you provided.
+
+To solve the above problem, you can use the geometry_option. For example, the geometry option: '^' will more or less crop your image so that it keeps its original ratio while fitting perfectly the proportions you provided. In the future, I will find symbols to use instead of their cryptic names I guess. This is the most useful one (while not available on old versions of ImageMagick < 6.3.8-2). You can also use '>' and '<' which will only proceed if the original image is bigger (or smaller for '<') than the proportions you provided.
+
+For more info on geometry, read this:
+
+ http://www.imagemagick.org/script/command-line-processing.php#geometry
+
+The last argument is useful when you use '^' as a third argument for example. If the image as to be cropped, we need to know how to crop it. This is the gravity. By default the gravity is 'center', but you might want to use 'north', 'south' ...
+
+More about gravity here:
+
+http://www.imagemagick.org/script/command-line-options.php#gravity
+
+= More about the builder
+
+Here a more complete example for the builder:
+
+	@treasure_instance.image_magick :portrait, 'mini.gif' do
+		im_write("-negate")
+  	im_crop(200,100,20,10)
+  	im_resize(200, 100, '^', 'North')
+	end
+	
+Which will secretly do something like:
+
+	convert /path/to/portrait.jpg -negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity North -extent 200x100 /path/to/portrait.mini.gif
+	
+= How to create thumbnails on the flight (The Hook)
+
+It is of course possible. StashMagic provides a hook called after_stash which takes the attachment_name as an argument. This hook is implemented by default and create automaticaly for every image a thumbnail called 'stash_thumb.gif'.
+
+What you have to do is overwrite the hook. For example, say you want every attachment to have a 200x200 perfect squared version:
+
+	after_stash(attachment_name)
+	  image_magick(attachment_name, 'square.jpg') { im_resize(200, 200, '^') }
+	end
+	
+Of course you can do something different for any attachment. You just need to use the attachment name in a case statement for example. Or you can do something different depending on the type of file using the getters. For example:
+
+	after_stash(attachment_name)
+		attachment_hash = self.send(attachment_name)
+	  image_magick(attachment_name, 'square.jpg') { im_resize(200, 200, '^') } if attachment_hash[:type][/^image\//]
+	end
+	
+Will do the same but only if the mime type of the file starts with 'image/' (which means it's an image).
+
 
 = More Details
 
 For more details, you can have a look at the specs to see how it's used or contact me on github if you have any question: http://github.com/mig-hub
+
+The project is speced with 
+- Bacon 1.1.0
+- Sequel 3.14.0
+- ImageMagick 6.5.8
 
 == Copyright
 
