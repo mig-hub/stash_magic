@@ -117,7 +117,7 @@ This will create your mini version of the portrait. The url for this image will 
 If you master ImageMagick, you can really do a lot with that. Nevertheless here is what you can use, as I have to admit that some things like geometry are not easy to get the first time. Here is the so-called string builder:
 
 	@treasure_instance.image_magick :portrait, 'mini.gif' do
-    im_resize(100, 75)
+  	im_resize(100, 75)
 	end
 	
 Not really much easier huh ?!?
