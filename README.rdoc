@@ -23,39 +23,39 @@ First you have to require the module:
 And then inside your model class, you have to include the module and declare where your public directory is:
 
 	class Treasure < ::Sequel::Model
-		include ::StashMagic
-		self.public_root = ::File.expand_path(::File.dirname(__FILE__)+'/public')
+	  include ::StashMagic
+	  self.public_root = ::File.expand_path(::File.dirname(__FILE__)+'/public')
 	end
 	
 The module has a method to do both in one line though:
 
 	class Treasure < ::Sequel::Model
-		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+	  ::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
 	end
 	
 After that, for each attachment you want, you need to have a column in the database as a string. And then you declare them with method Model#stash:
 
 	class Treasure < ::Sequel::Model
-		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+	  ::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
 		
-		stash :map
-		stash :stamp
+	  stash :map
+	  stash :stamp
 	end
 	
 This method accepts an optional hash as a second argument which is not used by the module itself, but could be handy for you as you can have it in the stash reflection:
 
 	class Treasure < ::Sequel::Model
-		::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+	  ::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
 		
-		stash :map
-		stash :stamp, :accept_gif => false, :limit => 512000
+	  stash :map
+	  stash :stamp, :accept_gif => false, :limit => 512000
 	end
 	
 The method Treasure.stash_reflection would return:
 
 	{ 
-		:map => {}, 
-		:stamp => {:accept_gif => false, :limit => 512000} 
+	  :map => {}, 
+	  :stamp => {:accept_gif => false, :limit => 512000} 
 	}
 	
 When building your html forms, just make sure that your stash inputs are of the type 'file', and StashMagic will deal with everything else. The getters will return a hash with the following values:
@@ -94,7 +94,7 @@ I just find it makes sense and saves one argument on some methods that are alrea
 
 Now if you really want to create styles, you need to have ImageMagick installed. ImageMagick is a very good and complete graphic library. You'll find more on the link below, but for the time being, just think of it as a Photoshop in command line:
 
- http://www.imagemagick.org/
+http://www.imagemagick.org/
 
 Even though StashMagic provides a builder for ImageMagick scripts, I suggest you learn a little bit about them for the following reasons:
 
@@ -117,7 +117,7 @@ This will create your mini version of the portrait. The url for this image will 
 If you master ImageMagick, you can really do a lot with that. Nevertheless here is what you can use, as I have to admit that some things like geometry are not easy to get the first time. Here is the so-called string builder:
 
 	@treasure_instance.image_magick :portrait, 'mini.gif' do
-  	im_resize(100, 75)
+    im_resize(100, 75)
 	end
 	
 Not really much easier huh ?!?
@@ -148,7 +148,7 @@ To solve the above problem, you can use the geometry_option. For example, the ge
 
 For more info on geometry, read this:
 
- http://www.imagemagick.org/script/command-line-processing.php#geometry
+http://www.imagemagick.org/script/command-line-processing.php#geometry
 
 The last argument is useful when you use '^' as a third argument for example. If the image as to be cropped, we need to know how to crop it. This is the gravity. By default the gravity is 'center', but you might want to use 'north', 'south' ...
 
@@ -165,9 +165,9 @@ Simply negate the image
 Here a more complete example for the builder:
 
 	@treasure_instance.image_magick :portrait, 'mini.gif' do
-		im_negate
-  	im_crop(200,100,20,10)
-  	im_resize(200, 100, '^', 'North')
+	  im_negate
+    im_crop(200,100,20,10)
+    im_resize(200, 100, '^', 'North')
 	end
 	
 Which will secretly do something like:
@@ -187,7 +187,7 @@ What you have to do is overwrite the hook. For example, say you want every attac
 Of course you can do something different for any attachment. You just need to use the attachment name in a case statement for example. Or you can do something different depending on the type of file using the getters. For example:
 
 	after_stash(attachment_name)
-		attachment_hash = self.send(attachment_name)
+	  attachment_hash = self.send(attachment_name)
 	  image_magick(attachment_name, 'square.jpg') { im_resize(200, 200, '^') } if attachment_hash[:type][/^image\//]
 	end
 	
@@ -205,8 +205,8 @@ The project is speced with
 
 = Change Log
 
-0.0.1   Begins
-0.0.2   Add im_negate to the ImageMagick builder
+- 0.0.1   Begins
+- 0.0.2   Add im_negate to the ImageMagick builder
 
 == Copyright
 
