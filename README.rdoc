@@ -14,6 +14,18 @@ Don't hesitate to contact me for any improvement, suggestion, or bug fixing.
 I've made the design choice not to build a Sequel plugin because I'd like StashMagic to work with other ORMs in the future.
 So any test or help is welcome.
 
+= How to install
+
+  gem install stash-magic
+
+Use Sudo if you want to install it for all users of your server:
+
+  sudo gem install stash-magic
+
+If you have Ruby 1.9, this is most likely that you have to command gem by gem19:
+
+  sudo gem19 install stash-magic 
+
 = How to use
 
 First you have to require the module:
