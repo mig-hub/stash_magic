@@ -1,3 +1,5 @@
+"I switch off the light. Where does it go?" -- Famous Koan
+
 = Stash Magic (BETA)
 
 Stash Magic provides a very simple interface for dealing with file system attachments in a database and help you with thumbnails or other styles via ImageMagick (hence, the name). Features are:
