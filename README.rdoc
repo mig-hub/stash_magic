@@ -9,9 +9,11 @@ Stash Magic provides a very simple interface for dealing with file system attach
 - Easy to understand (one file) module 
 
 This is still in Beta version built with simplicity in mind.
+It tries to do a lot with less code that anybody would be able to understand quickly.
 Don't hesitate to contact me for any improvement, suggestion, or bug fixing.
 
 I've made the design choice not to build a Sequel plugin because I'd like StashMagic to work with other ORMs in the future.
+I'm pretty sure that if it doesn't already work with ActiveRecord, only changing a couple of names would fix it.
 So any test or help is welcome.
 
 = How to install
@@ -205,6 +207,36 @@ Of course you can do something different for any attachment. You just need to us
   
 Will do the same but only if the mime type of the file starts with 'image/' (which means it's an image).
 
+= How my files are then saved on my file system
+
+I like to believe that one don't have to think about that as long as the module provides enough methods to do what you need to do.
+Nevertheless, here is how files are organized:
+
+First of all, StashMagic puts everything it has in a folder called 'stash', so that if you use a deployment system, only one location is not to deploy on the live version. For example, while using Git, your .gitignore would have this line:
+
+  public/stash/*
+
+After that, you've got one folder per model class. And inside this folder, one folder per entry simply named after its ID number. At the end point, you have the attachments, named after the attachment name, and the extention is the original extention if that is the main file, or the style name if this is a style. Here is an example:
+
+  |
+  +- public
+     +- stash
+        +- Treasure
+           +- 1
+           |  +- map.jpg
+           |  +- map.mini.gif
+           |  +- instructions.pdf
+           |  \- instructions.cover.jpg 
+           \- 2
+              +- map.jpg
+              +- map.mini.gif
+              +- instructions.pdf
+              \- instructions.cover.jpg
+
+Please note that the class name is a simple #to_s. I've realized recently that methods like underscore or pluralize are computing for nothing in 99% of cases. I might consider them better when they will be in the Standard library. But as a side effect, try to avoid class names that are spelled the same once lowercased, as systems (at least unix based) are not case sensitive. I can give you an example straight away:
+
+  BootStrap
+  BootsTrap 
 
 = More Details
 
