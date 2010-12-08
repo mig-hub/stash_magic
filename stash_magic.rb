@@ -33,12 +33,12 @@ module StashMagic
         #   :name=>"model[attachment]"
         # }
         #
-        # GETTER
+        # SETTER
         define_method name.to_s+'='  do |upload_hash|
           return if upload_hash=="" # File in the form is unchanged
           
           if upload_hash.nil?
-            destroy_files_for(name)
+            destroy_files_for(name) unless self.send(name).nil?
             super('')
           else
           
@@ -53,7 +53,7 @@ module StashMagic
             
           end
         end
-        # SETTER
+        # GETTER
         define_method name.to_s do
           eval(super.to_s)
         end

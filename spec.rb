@@ -199,6 +199,11 @@ describe ::StashMagic do
     F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
   end
   
+  it "Should not raise when the setter tries to destroy files when there is nothing to destroy" do
+    lambda { @t = Treasure.create(:instructions=>nil) }.should.not.raise
+    lambda { @t.update(:instructions=>nil) }.should.not.raise
+  end
+  
   it "Should have ImageMagick string builder" do
     @t = Treasure.create(:map=>@img)
     

@@ -253,6 +253,7 @@ The project is speced with
 
 - 0.0.1   Begins
 - 0.0.2   Add im_negate to the ImageMagick builder
+- 0.0.3   Fix image destruction when there is nothing to destroy
 
 == Copyright
 
