@@ -54,8 +54,8 @@ module StashMagic
           end
         end
         # GETTER
-        define_method name.to_s do
-          eval(super.to_s)
+        define_method name.to_s do |*args|
+          eval(super(*args).to_s)
         end
       end
       
