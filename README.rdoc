@@ -257,4 +257,4 @@ The project is speced with
 
 == Copyright
 
-(c) 2010 Mickael Riga - see MIT_LICENCE for details
+(c) 2010 - 2011 Mickael Riga - see MIT_LICENCE for details
