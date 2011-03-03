@@ -1,5 +1,4 @@
 require 'fileutils'
-require 'erb'
 
 # A replacement for our current attachment system
 # New requirements being:
@@ -92,7 +91,7 @@ module StashMagic
     alt = send(attachment_name+'_alternative_text') rescue nil
     html_attributes = {:src => file_url(attachment_name, style), :title => title, :alt => alt}.update(html_attributes)
     html_attributes = html_attributes.map do |k,v|
-      %{#{k.to_s}="#{ERB::Util.h(v.to_s)}"}
+      %{#{k.to_s}="#{html_escape(v.to_s)}"}
     end.join(' ')
     
     "<img #{html_attributes} />"
@@ -186,6 +185,13 @@ module StashMagic
       F.readlines(filename)[0..lineno.to_i].reverse.find{|ln| ln =~ regexp }
       const_get($1)
     end
+  end
+  
+  private
+  
+  # Stolen from ERB
+  def html_escape(s)
+    s.to_s.gsub(/&/, "&amp;").gsub(/\"/, "&quot;").gsub(/>/, "&gt;").gsub(/</, "&lt;")
   end
   
 end

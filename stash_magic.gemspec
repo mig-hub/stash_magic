@@ -1,8 +1,8 @@
 Gem::Specification.new do |s| 
   s.name = 'stash-magic'
-  s.version = "0.0.4"
+  s.version = "0.0.5"
   s.platform = Gem::Platform::RUBY
-  s.summary = "Simple Attachment Manager"
+  s.summary = "File Attachment Made Simple"
   s.description = "A simple attachment system that also handles thumbnails or other styles via ImageMagick. Originaly tested on Sequel ORM but purposedly easy to plug to something else."
   s.files = `git ls-files`.split("\n").sort
   s.test_files = ['spec.rb']

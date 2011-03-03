@@ -170,10 +170,10 @@ describe ::StashMagic do
   
   it "Should be able to build image tags" do
     @t = Treasure.create(:map => @img)
-    tag = @t.build_image_tag(:map,nil,:alt => 'Amazing Map')
+    tag = @t.build_image_tag(:map,nil,:alt => 'Amazing & Beautiful Map')
     tag.should.match(/^<img\s.+\s\/>$/)
     tag.should.match(/\ssrc="\/stash\/Treasure\/#{@t.id}\/map.jpg"\s/)
-    tag.should.match(/\salt="Amazing Map"\s/)
+    tag.should.match(/\salt="Amazing &amp; Beautiful Map"\s/)
     tag.should.match(/\stitle=""\s/)
   end
   
