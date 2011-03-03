@@ -196,13 +196,13 @@ It is of course possible. StashMagic provides a hook called after_stash which ta
 
 What you have to do is overwrite the hook. For example, say you want every attachment to have a 200x200 perfect squared version:
 
-  after_stash(attachment_name)
+  def after_stash(attachment_name)
     image_magick(attachment_name, 'square.jpg') { im_resize(200, 200, '^') }
   end
   
 Of course you can do something different for any attachment. You just need to use the attachment name in a case statement for example. Or you can do something different depending on the type of file using the getters. For example:
 
-  after_stash(attachment_name)
+  def after_stash(attachment_name)
     attachment_hash = self.send(attachment_name)
     image_magick(attachment_name, 'square.jpg') { im_resize(200, 200, '^') } if attachment_hash[:type][/^image\//]
   end

@@ -146,7 +146,7 @@ module StashMagic
         FU.chmod(0777, url)
         after_stash(k)
       end
-      # Reset in case we access to times the entry in the same session
+      # Reset in case we access two times the entry in the same session
       # Like setting an attachment and destroying it consecutively
       # Dummy ex:    Model.create(:img => file).update(:img => nil)
       @tempfile_path = nil
