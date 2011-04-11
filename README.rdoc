@@ -209,6 +209,13 @@ Of course you can do something different for any attachment. You just need to us
   
 Will do the same but only if the mime type of the file starts with 'image/' (which means it's an image).
 
+You can also discard the original size and keep resized version instead.
+This is done by using `nil` as a style:
+
+  def after_stash(attachment_name)
+    image_magick(attachment_name) { im_resize(400,300) }
+  end
+
 = How my files are then saved on my file system
 
 I like to believe that one don't have to think about that as long as the module provides enough methods to do what you need to do.
@@ -255,6 +262,7 @@ The project is speced with
 - 0.0.2   Add im_negate to the ImageMagick builder
 - 0.0.3   Fix image destruction when there is nothing to destroy
 - 0.0.5   Remove ERB dependency
+- 0.0.7   Make it possible to overwrite the original image with another style in after_stash
 
 == Copyright
 

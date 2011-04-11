@@ -101,11 +101,11 @@ module StashMagic
   # = ImageMagick =
   # ===============
   # Basic
-  def convert(attachment_name, convert_steps="-resize 100x75^ -gravity center -extent 100x75", style='stash_thumb.gif')
+  def convert(attachment_name, convert_steps="", style=nil)
     system "convert \"#{file_url(attachment_name, nil, true)}\" #{convert_steps} \"#{file_url(attachment_name, style, true)}\""
   end
   # IM String builder
-  def image_magick(attachment_name, style, &block)
+  def image_magick(attachment_name, style=nil, &block)
     @image_magick_strings = []
     instance_eval &block
     convert_string = @image_magick_strings.join(' ')
@@ -154,7 +154,7 @@ module StashMagic
   
   def after_stash(attachment_name)
     current = self.send(attachment_name)
-    convert(attachment_name) if !current.nil? && current[:type][/^image\//]
+    convert(attachment_name, "-resize 100x75^ -gravity center -extent 100x75", 'stash_thumb.gif') if !current.nil? && current[:type][/^image\//]
   end
   
   def destroy_files_for(attachment_name, url=nil)

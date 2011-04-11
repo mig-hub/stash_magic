@@ -233,8 +233,15 @@ describe ::StashMagic do
       im_crop(200,100,20,10)
       im_resize(200, 100, '^', 'North')
     end.should=="-negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity North -extent 200x100"
-    F.exists?(@t.file_url(:map,'test4.gif',true)).should==true
-    
+    F.exists?(@t.file_url(:map,'test4.gif',true)).should==true    
+  end
+  
+  it "Should be possible to overwrite the original image" do
+    @t = Treasure.create(:map=>@img)
+    url = @t.file_url(:map,nil,true)
+    size_before = F.size(url)
+    @t.convert(:map, '-resize 100x75')
+    F.size(url).should.not==size_before
   end
   
   ::FileUtils.rm_rf(Treasure::PUBLIC) if F.exists?(Treasure::PUBLIC)
