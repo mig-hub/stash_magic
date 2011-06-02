@@ -263,6 +263,7 @@ The project is speced with
 - 0.0.3   Fix image destruction when there is nothing to destroy
 - 0.0.5   Remove ERB dependency
 - 0.0.7   Make it possible to overwrite the original image with another style in after_stash
+- 0.0.8   Default thumb does not break when file name has signs in the name
 
 == Copyright
 

@@ -154,7 +154,7 @@ module StashMagic
   
   def after_stash(attachment_name)
     current = self.send(attachment_name)
-    convert(attachment_name, "-resize 100x75^ -gravity center -extent 100x75", 'stash_thumb.gif') if !current.nil? && current[:type][/^image\//]
+    convert(attachment_name, "-resize '100x75^' -gravity center -extent 100x75", 'stash_thumb.gif') if !current.nil? && current[:type][/^image\//]
   end
   
   def destroy_files_for(attachment_name, url=nil)

@@ -192,10 +192,10 @@ describe ::StashMagic do
   
   it "Should not raise when updating the entry with blank string - which means the attachment is untouched" do
     @t = Treasure.create(:instructions => @pdf)
-    @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20956}
+    before = @t.instructions
     F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
     @t.update(:instructions=>"")
-    @t.instructions.should=={:type=>"application/pdf", :name=>"instructions.pdf", :size=>20956}
+    @t.instructions.should==before
     F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
   end
   
