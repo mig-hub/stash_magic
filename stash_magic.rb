@@ -37,7 +37,7 @@ module StashMagic
           return if upload_hash=="" # File in the form is unchanged
           
           if upload_hash.nil?
-            destroy_files_for(name) unless self.send(name).nil?
+            destroy_files_for(name) unless self.__send__(name).nil?
             super('')
           else
           
@@ -78,7 +78,7 @@ module StashMagic
   # Returns the url of an attachment in a specific style(original if nil)
   # The argument 'full' means it returns the absolute path(used to save files)
   def file_url(attachment_name, style=nil, full=false)
-    f = send(attachment_name)
+    f = __send__(attachment_name)
     return nil if f.nil?
     fn = style.nil? ? f[:name] : "#{attachment_name}.#{style}"
     "#{file_path(full)}/#{fn}"
@@ -87,8 +87,8 @@ module StashMagic
   # Build the image tag with all SEO friendly info
   # It's possible to add html attributes in a hash
   def build_image_tag(attachment_name, style=nil, html_attributes={})
-    title = send(attachment_name+'_tooltip') rescue nil
-    alt = send(attachment_name+'_alternative_text') rescue nil
+    title = __send__(attachment_name+'_tooltip') rescue nil
+    alt = __send__(attachment_name+'_alternative_text') rescue nil
     html_attributes = {:src => file_url(attachment_name, style), :title => title, :alt => alt}.update(html_attributes)
     html_attributes = html_attributes.map do |k,v|
       %{#{k.to_s}="#{html_escape(v.to_s)}"}
@@ -153,7 +153,7 @@ module StashMagic
   end
   
   def after_stash(attachment_name)
-    current = self.send(attachment_name)
+    current = self.__send__(attachment_name)
     convert(attachment_name, "-resize '100x75^' -gravity center -extent 100x75", 'stash_thumb.gif') if !current.nil? && current[:type][/^image\//]
   end
   
