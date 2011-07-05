@@ -87,8 +87,9 @@ module StashMagic
   # Build the image tag with all SEO friendly info
   # It's possible to add html attributes in a hash
   def build_image_tag(attachment_name, style=nil, html_attributes={})
-    title = __send__(attachment_name+'_tooltip') rescue nil
-    alt = __send__(attachment_name+'_alternative_text') rescue nil
+    title_field, alt_field = (attachment_name.to_s+'_tooltip').to_sym, (attachment_name.to_s+'_alternative_text').to_sym
+    title = __send__(title_field) if columns.include?(title_field)
+    alt = __send__(alt_field) if columns.include?(alt_field)
     html_attributes = {:src => file_url(attachment_name, style), :title => title, :alt => alt}.update(html_attributes)
     html_attributes = html_attributes.map do |k,v|
       %{#{k.to_s}="#{html_escape(v.to_s)}"}

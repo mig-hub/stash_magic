@@ -25,6 +25,8 @@ class Treasure < ::Sequel::Model
     primary_key :id
     Integer :age
     String :map # jpeg
+    String :map_tooltip
+    String :map_alternative_text
     String :mappy # jpeg - Used to see if mappy files are not destroyed when map is (because it starts the same)
     String :instructions #pdf
   end
@@ -169,7 +171,16 @@ describe ::StashMagic do
   end
   
   it "Should be able to build image tags" do
-    @t = Treasure.create(:map => @img)
+    @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
+    tag = @t.build_image_tag(:map)
+    tag.should.match(/^<img\s.+\s\/>$/)
+    tag.should.match(/\ssrc="\/stash\/Treasure\/#{@t.id}\/map.jpg"\s/)
+    tag.should.match(/\salt="Wonderful"\s/)
+    tag.should.match(/\stitle=""\s/)
+  end
+  
+  it "Should be able to build image tags and override alt and title" do
+    @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
     tag = @t.build_image_tag(:map,nil,:alt => 'Amazing & Beautiful Map')
     tag.should.match(/^<img\s.+\s\/>$/)
     tag.should.match(/\ssrc="\/stash\/Treasure\/#{@t.id}\/map.jpg"\s/)
