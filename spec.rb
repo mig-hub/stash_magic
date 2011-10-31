@@ -7,7 +7,6 @@ D = ::Dir
 
 require 'rubygems'
 require 'bacon'
-Bacon.summary_on_exit
 
 require 'sequel'
 DB = Sequel.sqlite
