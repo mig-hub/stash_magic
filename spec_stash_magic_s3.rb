@@ -11,6 +11,14 @@ require 'tempfile'
 
 require F.dirname(__FILE__)+'/stash_magic_s3'
 
+# S3 credentials
+pseudo_env = File.join(F.dirname(__FILE__), 'private', 'pseudo_env.rb')
+load(pseudo_env) if File.exists?(pseudo_env)
+AWS::S3::Base.establish_connection!(
+  :access_key_id     => ENV['S3_KEY'],
+  :secret_access_key => ENV['S3_SECRET']
+)
+
 class Treasure < ::Sequel::Model
   BUCKET = 'campbellhay-stashmagictest'
   ::StashMagicS3.with_bucket(BUCKET)
@@ -50,7 +58,8 @@ class BadTreasure < ::Sequel::Model
 end
 
 # Make temporary public folder
-#D.mkdir(Treasure::PUBLIC) unless F.exists?(Treasure::PUBLIC)
+PUBLIC = F.expand_path(F.dirname(__FILE__)+'/public')
+D.mkdir(PUBLIC) unless F.exists?(PUBLIC)
 
 # =========
 # = Tests =
@@ -58,82 +67,76 @@ end
 
 describe ::StashMagicS3 do
   
-  # `convert rose: #{Treasure::PUBLIC}/rose.jpg` unless F.exists?(Treasure::PUBLIC+'/rose.jpg') # Use ImageMagick to build a tmp image to use
-  # `convert granite: #{Treasure::PUBLIC}/granite.gif` unless F.exists?(Treasure::PUBLIC+'/granite.gif') # Use ImageMagick to build a tmp image to use
-  # `convert rose: #{Treasure::PUBLIC}/rose.pdf` unless F.exists?(Treasure::PUBLIC+'/rose.pdf') # Use ImageMagick to build a tmp image to use
-  # `convert logo: #{Treasure::PUBLIC}/logo.pdf` unless F.exists?(Treasure::PUBLIC+'/logo.pdf')
-  # 
-  # def mock_upload(uploaded_file_path, content_type, binary=false)
-  #   n = F.basename(uploaded_file_path)
-  #   f = ::Tempfile.new(n)
-  #   f.set_encoding(Encoding::BINARY) if f.respond_to?(:set_encoding)
-  #   f.binmode if binary
-  #   ::FileUtils.copy_file(uploaded_file_path, f.path)
-  #   {
-  #     :filename => n, 
-  #     :type => content_type,
-  #     :tempfile => f
-  #   }
-  # end
-  # 
-  # before do
-  #   @img = mock_upload(Treasure::PUBLIC+'/rose.jpg', 'image/jpeg', true)
-  #   @img2 = mock_upload(Treasure::PUBLIC+'/granite.gif', 'image/gif', true)
-  #   @pdf = mock_upload(Treasure::PUBLIC+'/rose.pdf', 'application/pdf', true)
-  #   @pdf2 = mock_upload(Treasure::PUBLIC+'/logo.pdf', 'application/pdf', true)
-  # end
+  `convert rose: #{PUBLIC}/rose.jpg` unless F.exists?(PUBLIC+'/rose.jpg') # Use ImageMagick to build a tmp image to use
+  `convert granite: #{PUBLIC}/granite.gif` unless F.exists?(PUBLIC+'/granite.gif') # Use ImageMagick to build a tmp image to use
+  `convert rose: #{PUBLIC}/rose.pdf` unless F.exists?(PUBLIC+'/rose.pdf') # Use ImageMagick to build a tmp image to use
+  `convert logo: #{PUBLIC}/logo.pdf` unless F.exists?(PUBLIC+'/logo.pdf')
+  
+  def mock_upload(uploaded_file_path, content_type, binary=false)
+    n = F.basename(uploaded_file_path)
+    f = ::Tempfile.new(n)
+    f.set_encoding(Encoding::BINARY) if f.respond_to?(:set_encoding)
+    f.binmode if binary
+    ::FileUtils.copy_file(uploaded_file_path, f.path)
+    {
+      :filename => n, 
+      :type => content_type,
+      :tempfile => f
+    }
+  end
+  
+  before do
+    @img = mock_upload(PUBLIC+'/rose.jpg', 'image/jpeg', true)
+    @img2 = mock_upload(PUBLIC+'/granite.gif', 'image/gif', true)
+    @pdf = mock_upload(PUBLIC+'/rose.pdf', 'application/pdf', true)
+    @pdf2 = mock_upload(PUBLIC+'/logo.pdf', 'application/pdf', true)
+  end
   
   it 'Should Include via Stash::with_bucket' do
     Treasure.bucket.should==Treasure::BUCKET
   end
 
-  # it 'Should create stash and model folder when included' do
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure').should==true
-  # end
-  # 
   it "Should stash entries with Class::stash and have reflection" do
     Treasure.stash_reflection.keys.include?(:map).should==true
     Treasure.stash_reflection.keys.include?(:instructions).should==true
   end
-  # 
-  # it "Should give instance its own file_path" do
-  #   # Normal path
-  #   @t = Treasure.create
-  #   @t.file_path.should=="/stash/Treasure/#{@t.id}"
-  #   # Anonymous path
-  #   Treasure.new.file_path.should=='/stash/Treasure/tmp'
-  #   # Normal path full
-  #   @t = Treasure.create
-  #   @t.file_path(true).should==Treasure::PUBLIC+"/stash/Treasure/#{@t.id}"
-  #   # Anonymous path full
-  #   Treasure.new.file_path(true).should==Treasure::PUBLIC+'/stash/Treasure/tmp'
-  # end
+  
+  it "Should give instance its own file_path" do
+    # Normal path
+    @t = Treasure.create
+    @t.file_path.should=="Treasure/#{@t.id}"
+    # Anonymous path
+    Treasure.new.file_path.should=='Treasure/tmp'
+  end
   # 
   # it "Should always raise on file_path if public_root is not declared" do
   #   lambda { BadTreasure.new.file_path }.should.raise(RuntimeError).message.should=='BadTreasure.public_root is not declared'
   # end
   # 
-  # it "Should not raise on setters eval when value already nil" do
-  #   Treasure.new.map.should==nil
-  # end
-  # 
-  # it "Should have correct file_url values" do
-  #   # Original with no file - so we are not sure about extention
-  #   Treasure.new.file_url(:map).should==nil
-  #   # Original with file but not saved
-  #   Treasure.new(:map=>@img).file_url(:map).should=='/stash/Treasure/tmp/map.jpg'
-  #   # Style with file but not saved
-  #   Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='/stash/Treasure/tmp/map.thumb.jpg' #not the right extention
-  # end
-  # 
-  # it "Should save the attachments when creating entry" do
-  #   @t = Treasure.create(:map => @img, :instructions => @pdf)
-  #   @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.stash_thumb.gif').should==false
-  # end
+  it "Should not raise on setters eval when value already nil" do
+    Treasure.new.map.should==nil
+  end
+  
+  it "Should have correct file_url values" do
+    # Original with no file - so we are not sure about extention
+    Treasure.new.file_url(:map).should==nil
+    # Original with file but not saved
+    Treasure.new(:map=>@img).file_url(:map).should=='Treasure/tmp/map.jpg'
+    # Style with file but not saved
+    Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='Treasure/tmp/map.thumb.jpg' #not the right extention
+  end
+  
+  it "Should save the attachments when creating entry" do
+    @t = Treasure.create(:map => @img, :instructions => @pdf)
+    @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
+    AWS::S3::S3Object.url_for(@t.file_url(:map), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_url(:instructions), Treasure.bucket).should==true
+    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==true
+    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
+    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.stash_thumb.gif').should==false
+  end
   # 
   # it "Should update attachment when updating entry" do
   #   @t = Treasure.create(:map => @img).update(:map=>@img2)
@@ -250,6 +253,6 @@ describe ::StashMagicS3 do
   #   F.size(url).should.not==size_before
   # end
   # 
-  # ::FileUtils.rm_rf(Treasure::PUBLIC) if F.exists?(Treasure::PUBLIC)
+  ::FileUtils.rm_rf(PUBLIC) if F.exists?(PUBLIC)
 
 end

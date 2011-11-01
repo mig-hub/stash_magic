@@ -51,16 +51,15 @@ module StashMagicS3
   end
   
   # Sugar
-  def public_root
-    self.class.public_root
+  def bucket
+    self.class.bucket
   end
   
   # This method the path for images of a specific style(original by default)
   # The argument 'full' means it returns the absolute path(used to save files)
   # This could be a private method only used by file_url, but i keep it public just in case
   def file_path(full=false)
-    raise "#{self.class}.public_root is not declared" if public_root.nil?
-    "#{public_root if full}/stash/#{self.class.to_s}/#{self.id || 'tmp'}"
+    "#{self.class.to_s}/#{self.id || 'tmp'}"
   end
      
   # Returns the url of an attachment in a specific style(original if nil)
@@ -69,7 +68,7 @@ module StashMagicS3
     f = __send__(attachment_name)
     return nil if f.nil?
     fn = style.nil? ? f[:name] : "#{attachment_name}.#{style}"
-    "#{file_path(full)}/#{fn}"
+    "#{file_path}/#{fn}"
   end
   
   # Build the image tag with all SEO friendly info
@@ -125,17 +124,15 @@ module StashMagicS3
   def after_save
     super rescue nil
     unless (@tempfile_path.nil? || @tempfile_path.empty?)
-      stash_path = file_path(true)
-      D::mkdir(stash_path) unless F::exist?(stash_path)
+      stash_path = file_path
       @tempfile_path.each do |k,v|
-        url = file_url(k, nil, true)
+        url = file_url(k, nil)
         destroy_files_for(k, url) # Destroy previously saved files
-        FU.move(v, url) # Save the new one
-        FU.chmod(0777, url)
-        after_stash(k)
+        AWS::S3::S3Object.store(url, open(v), bucket)
+        #after_stash(k)
       end
       # Reset in case we access two times the entry in the same session
-      # Like setting an attachment and destroying it consecutively
+      # Like setting an attachment and destroying it in a row
       # Dummy ex:    Model.create(:img => file).update(:img => nil)
       @tempfile_path = nil
     end
@@ -147,8 +144,11 @@ module StashMagicS3
   end
   
   def destroy_files_for(attachment_name, url=nil)
-    url ||= file_url(attachment_name, nil, true)
-    D[url.sub(/\.[^.]+$/, '.*')].each {|f| FU.rm(f) }
+    url ||= file_url(attachment_name, nil)
+    #D[url.sub(/\.[^.]+$/, '.*')].each {|f| FU.rm(f) }
+    AWS::S3::Bucket.objects(bucket, :prefix=>url.sub(/\.[^.]+$/, '')).each do |o|
+      o.delete
+    end
   end
   alias destroy_file_for destroy_files_for
   

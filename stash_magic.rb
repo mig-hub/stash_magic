@@ -147,7 +147,7 @@ module StashMagic
         after_stash(k)
       end
       # Reset in case we access two times the entry in the same session
-      # Like setting an attachment and destroying it consecutively
+      # Like setting an attachment and destroying it in a row
       # Dummy ex:    Model.create(:img => file).update(:img => nil)
       @tempfile_path = nil
     end
