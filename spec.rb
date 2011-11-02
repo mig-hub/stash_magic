@@ -100,21 +100,21 @@ describe ::StashMagic do
     Treasure.stash_reflection.keys.include?(:instructions).should==true
   end
   
-  it "Should give instance its own file_path" do
+  it "Should give instance its own file_root" do
     # Normal path
     @t = Treasure.create
-    @t.file_path.should=="/stash/Treasure/#{@t.id}"
+    @t.file_root.should=="/stash/Treasure/#{@t.id}"
     # Anonymous path
-    Treasure.new.file_path.should=='/stash/Treasure/tmp'
+    Treasure.new.file_root.should=='/stash/Treasure/tmp'
     # Normal path full
     @t = Treasure.create
-    @t.file_path(true).should==Treasure::PUBLIC+"/stash/Treasure/#{@t.id}"
+    @t.file_root(true).should==Treasure::PUBLIC+"/stash/Treasure/#{@t.id}"
     # Anonymous path full
-    Treasure.new.file_path(true).should==Treasure::PUBLIC+'/stash/Treasure/tmp'
+    Treasure.new.file_root(true).should==Treasure::PUBLIC+'/stash/Treasure/tmp'
   end
   
-  it "Should always raise on file_path if public_root is not declared" do
-    lambda { BadTreasure.new.file_path }.should.raise(RuntimeError).message.should=='BadTreasure.public_root is not declared'
+  it "Should always raise on class.public_root if public_root is not declared" do
+    lambda { BadTreasure.new.file_root(true) }.should.raise(RuntimeError).message.should=='BadTreasure.public_root is not declared'
   end
   
   it "Should not raise on setters eval when value already nil" do
@@ -222,33 +222,33 @@ describe ::StashMagic do
       im_crop(200,100,20,10)
       im_resize(nil, 100)
     end.should=="-negate -crop 200x100+20+10 +repage -resize 'x100'"
-    F.exists?(@t.file_url(:map,'test.gif',true)).should==true
+    F.exists?(@t.file_path(:map,'test.gif',true)).should==true
     
     @t.image_magick(:map, 'test2.gif') do
       im_write("-negate")
       im_crop(200,100,20,10)
       im_resize(nil, 100, '>')
     end.should=="-negate -crop 200x100+20+10 +repage -resize 'x100>'"
-    F.exists?(@t.file_url(:map,'test2.gif',true)).should==true
+    F.exists?(@t.file_path(:map,'test2.gif',true)).should==true
     
     @t.image_magick(:map, 'test3.gif') do
       im_write("-negate")
       im_crop(200,100,20,10)
       im_resize(200, 100, '^')
     end.should=="-negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity center -extent 200x100"
-    F.exists?(@t.file_url(:map,'test3.gif',true)).should==true
+    F.exists?(@t.file_path(:map,'test3.gif',true)).should==true
     
     @t.image_magick(:map, 'test4.gif') do
       im_write("-negate")
       im_crop(200,100,20,10)
       im_resize(200, 100, '^', 'North')
     end.should=="-negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity North -extent 200x100"
-    F.exists?(@t.file_url(:map,'test4.gif',true)).should==true    
+    F.exists?(@t.file_path(:map,'test4.gif',true)).should==true    
   end
   
   it "Should be possible to overwrite the original image" do
     @t = Treasure.create(:map=>@img)
-    url = @t.file_url(:map,nil,true)
+    url = @t.file_path(:map,nil,true)
     size_before = F.size(url)
     @t.convert(:map, '-resize 100x75')
     F.size(url).should.not==size_before

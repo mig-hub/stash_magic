@@ -52,27 +52,38 @@ module StashMagicS3
   
   # Sugar
   def bucket
+    raise "#{self.class}.bucket is not declared" if self.class.bucket.nil?
     self.class.bucket
   end
   
   # This method the path for images of a specific style(original by default)
   # The argument 'full' means it returns the absolute path(used to save files)
   # This could be a private method only used by file_url, but i keep it public just in case
-  def file_path(full=false)
+  def file_root
     "#{self.class.to_s}/#{self.id || 'tmp'}"
   end
      
   # Returns the url of an attachment in a specific style(original if nil)
   # The argument 'full' means it returns the absolute path(used to save files)
-  def file_url(attachment_name, style=nil, full=false)
+  def file_path(attachment_name, style=nil)
     f = __send__(attachment_name)
     return nil if f.nil?
     fn = style.nil? ? f[:name] : "#{attachment_name}.#{style}"
-    "#{file_path}/#{fn}"
+    "#{file_root}/#{fn}"
+  end
+  
+  # Like for the filesystem version
+  # But it only gives a URL with no credentials, when the file is public
+  # Otherwise it is better to use Model#s3object.url
+  # Careful with the later if you have private files
+  def file_url(attachment_name, style=nil)
+    f = file_path(attachment_name, style)
+    return nil if f.nil?
+    "https://s3.amazonaws.com/#{bucket}/#{f}"
   end
   
   def s3object(attachment_name,style=nil)
-    u = file_url(attachment_name,style)
+    u = file_path(attachment_name,style)
     return nil if u.nil?
     AWS::S3::S3Object.find(u, bucket)
   end
@@ -96,7 +107,7 @@ module StashMagicS3
   # ===============
   # Basic
   def convert(attachment_name, convert_steps="", style=nil)
-    system "convert \"#{file_url(attachment_name, nil, true)}\" #{convert_steps} \"#{file_url(attachment_name, style, true)}\""
+    system "convert \"#{file_path(attachment_name, nil, true)}\" #{convert_steps} \"#{file_path(attachment_name, style, true)}\""
   end
   # IM String builder
   def image_magick(attachment_name, style=nil, &block)
@@ -130,9 +141,9 @@ module StashMagicS3
   def after_save
     super rescue nil
     unless (@tempfile_path.nil? || @tempfile_path.empty?)
-      stash_path = file_path
+      stash_path = file_root
       @tempfile_path.each do |k,v|
-        url = file_url(k, nil)
+        url = file_path(k, nil)
         destroy_files_for(k, url) # Destroy previously saved files
         AWS::S3::S3Object.store(url, open(v), bucket)
         #after_stash(k)
@@ -150,7 +161,7 @@ module StashMagicS3
   end
   
   def destroy_files_for(attachment_name, url=nil)
-    url ||= file_url(attachment_name, nil)
+    url ||= file_path(attachment_name, nil)
     #D[url.sub(/\.[^.]+$/, '.*')].each {|f| FU.rm(f) }
     AWS::S3::Bucket.objects(bucket, :prefix=>url.sub(/[^.]+$/, '')).each do |o|
       o.delete
@@ -160,7 +171,7 @@ module StashMagicS3
   
   def after_destroy
     super rescue nil
-    p = file_path(true)
+    p = file_root(true)
     FU.rm_rf(p) if F.exists?(p)
   end
   

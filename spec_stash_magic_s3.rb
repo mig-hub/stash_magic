@@ -103,36 +103,45 @@ describe ::StashMagicS3 do
     Treasure.stash_reflection.keys.include?(:instructions).should==true
   end
   
-  it "Should give instance its own file_path" do
+  it "Should give instance its own file_root" do
     # Normal path
     @t = Treasure.create
-    @t.file_path.should=="Treasure/#{@t.id}"
+    @t.file_root.should=="Treasure/#{@t.id}"
     # Anonymous path
-    Treasure.new.file_path.should=='Treasure/tmp'
+    Treasure.new.file_root.should=='Treasure/tmp'
   end
-  # 
-  # it "Should always raise on file_path if public_root is not declared" do
-  #   lambda { BadTreasure.new.file_path }.should.raise(RuntimeError).message.should=='BadTreasure.public_root is not declared'
-  # end
-  # 
+  
+  it "Should always raise on class.bucket if bucket is not declared" do
+    lambda { BadTreasure.new.bucket }.should.raise(RuntimeError).message.should=='BadTreasure.bucket is not declared'
+  end
+  
   it "Should not raise on setters eval when value already nil" do
     Treasure.new.map.should==nil
+  end
+  
+  it "Should have correct file_path values" do
+    # Original with no file - so we are not sure about extention
+    Treasure.new.file_path(:map).should==nil
+    # Original with file but not saved
+    Treasure.new(:map=>@img).file_path(:map).should=='Treasure/tmp/map.jpg'
+    # Style with file but not saved
+    Treasure.new(:map=>@img).file_path(:map, 'thumb.jpg').should=='Treasure/tmp/map.thumb.jpg' #not the right extention
   end
   
   it "Should have correct file_url values" do
     # Original with no file - so we are not sure about extention
     Treasure.new.file_url(:map).should==nil
     # Original with file but not saved
-    Treasure.new(:map=>@img).file_url(:map).should=='Treasure/tmp/map.jpg'
+    Treasure.new(:map=>@img).file_url(:map).should=='https://s3.amazonaws.com/campbellhay-stashmagictest/Treasure/tmp/map.jpg'
     # Style with file but not saved
-    Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='Treasure/tmp/map.thumb.jpg' #not the right extention
+    Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='https://s3.amazonaws.com/campbellhay-stashmagictest/Treasure/tmp/map.thumb.jpg' #not the right extention
   end
   
   it "Should save the attachments when creating entry" do
     @t = Treasure.create(:map => @img, :instructions => @pdf)
     @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
-    AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==true
-    AWS::S3::S3Object.exists?(@t.file_url(:instructions), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_path(:instructions), Treasure.bucket).should==true
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.stash_thumb.gif').should==false
   end
@@ -140,8 +149,8 @@ describe ::StashMagicS3 do
   it "Should update attachment when updating entry" do
     @t = Treasure.create(:map => @img).update(:map=>@img2)
     @t.map.should=={:name=>'map.gif',:type=>'image/gif',:size=>7037}
-    AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==true
-    AWS::S3::S3Object.exists?(@t.file_url(:map).sub(/gif/, 'jpg'), Treasure.bucket).should==false
+    AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_path(:map).sub(/gif/, 'jpg'), Treasure.bucket).should==false
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
   end
   
@@ -151,15 +160,15 @@ describe ::StashMagicS3 do
     @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
     # @t.file_url(:mappy).should=='j'
     # AWS::S3::Bucket.objects(Treasure.bucket).map{|f|f.key}.should==''
-    AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==true
-    AWS::S3::S3Object.exists?(@t.file_url(:mappy), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_path(:mappy), Treasure.bucket).should==true
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
     @t.update(:map=>nil)
     @t.map.should==nil
     @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
-    # AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==false
-    AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_url(:map)).should==false # https://github.com/marcel/aws-s3/issues/43
-    AWS::S3::S3Object.exists?(@t.file_url(:mappy), Treasure.bucket).should==true
+    # AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==false
+    AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_path(:map)).should==false # https://github.com/marcel/aws-s3/issues/43
+    AWS::S3::S3Object.exists?(@t.file_path(:mappy), Treasure.bucket).should==true
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==false
   end
   
@@ -173,51 +182,51 @@ describe ::StashMagicS3 do
     obj = t.s3object(:map)
     obj.content_type.should=='image/jpeg'
   end
-  # 
-  # it "Should be able to build image tags" do
-  #   @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
-  #   tag = @t.build_image_tag(:map)
-  #   tag.should.match(/^<img\s.+\s\/>$/)
-  #   tag.should.match(/\ssrc="\/stash\/Treasure\/#{@t.id}\/map.jpg"\s/)
-  #   tag.should.match(/\salt="Wonderful"\s/)
-  #   tag.should.match(/\stitle=""\s/)
-  # end
-  # 
-  # it "Should be able to build image tags and override alt and title" do
-  #   @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
-  #   tag = @t.build_image_tag(:map,nil,:alt => 'Amazing & Beautiful Map')
-  #   tag.should.match(/^<img\s.+\s\/>$/)
-  #   tag.should.match(/\ssrc="\/stash\/Treasure\/#{@t.id}\/map.jpg"\s/)
-  #   tag.should.match(/\salt="Amazing &amp; Beautiful Map"\s/)
-  #   tag.should.match(/\stitle=""\s/)
-  # end
-  # 
-  # it "Should be able to handle validations" do
-  #   @t = Treasure.new(:instructions => @pdf2)
-  #   @t.valid?.should==false
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==false
-  #   @t.set(:instructions => @pdf, :age => 8)
-  #   @t.valid?.should==false
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==false
-  #   @t.set(:age => 12)
-  #   @t.valid?.should==true
-  #   @t.save
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
-  # end
-  # 
-  # it "Should not raise when updating the entry with blank string - which means the attachment is untouched" do
-  #   @t = Treasure.create(:instructions => @pdf)
-  #   before = @t.instructions
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
-  #   @t.update(:instructions=>"")
-  #   @t.instructions.should==before
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
-  # end
-  # 
-  # it "Should not raise when the setter tries to destroy files when there is nothing to destroy" do
-  #   lambda { @t = Treasure.create(:instructions=>nil) }.should.not.raise
-  #   lambda { @t.update(:instructions=>nil) }.should.not.raise
-  # end
+  
+  it "Should be able to build image tags" do
+    @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
+    tag = @t.build_image_tag(:map)
+    tag.should.match(/^<img\s.+\s\/>$/)
+    tag.should.match(/\ssrc="https:\/\/s3.amazonaws.com\/campbellhay-stashmagictest\/Treasure\/#{@t.id}\/map.jpg"\s/)
+    tag.should.match(/\salt="Wonderful"\s/)
+    tag.should.match(/\stitle=""\s/)
+  end
+  
+  it "Should be able to build image tags and override alt and title" do
+    @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
+    tag = @t.build_image_tag(:map,nil,:alt => 'Amazing & Beautiful Map')
+    tag.should.match(/^<img\s.+\s\/>$/)
+    tag.should.match(/\ssrc="https:\/\/s3.amazonaws.com\/campbellhay-stashmagictest\/Treasure\/#{@t.id}\/map.jpg"\s/)
+    tag.should.match(/\salt="Amazing &amp; Beautiful Map"\s/)
+    tag.should.match(/\stitle=""\s/)
+  end
+  
+  it "Should be able to handle validations" do
+    @t = Treasure.new(:instructions => @pdf2)
+    @t.valid?.should==false
+    AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_path(:instructions)).should==false # https://github.com/marcel/aws-s3/issues/43
+    @t.set(:instructions => @pdf, :age => 8)
+    @t.valid?.should==false
+    AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_path(:instructions)).should==false # https://github.com/marcel/aws-s3/issues/43
+    @t.set(:age => 12)
+    @t.valid?.should==true
+    @t.save
+    AWS::S3::S3Object.exists?(@t.file_path(:instructions), Treasure.bucket).should==true
+  end
+  
+  it "Should not raise when updating the entry with blank string - which means the attachment is untouched" do
+    @t = Treasure.create(:instructions => @pdf)
+    before = @t.instructions
+    AWS::S3::S3Object.exists?(@t.file_path(:instructions), Treasure.bucket).should==true
+    @t.update(:instructions=>"")
+    @t.instructions.should==before
+    AWS::S3::S3Object.exists?(@t.file_path(:instructions), Treasure.bucket).should==true
+  end
+  
+  it "Should not raise when the setter tries to destroy files when there is nothing to destroy" do
+    lambda { @t = Treasure.create(:instructions=>nil) }.should.not.raise
+    lambda { @t.update(:instructions=>nil) }.should.not.raise
+  end
   # 
   # it "Should have ImageMagick string builder" do
   #   @t = Treasure.create(:map=>@img)
@@ -227,33 +236,33 @@ describe ::StashMagicS3 do
   #     im_crop(200,100,20,10)
   #     im_resize(nil, 100)
   #   end.should=="-negate -crop 200x100+20+10 +repage -resize 'x100'"
-  #   F.exists?(@t.file_url(:map,'test.gif',true)).should==true
+  #   F.exists?(@t.file_path(:map,'test.gif',true)).should==true
   #   
   #   @t.image_magick(:map, 'test2.gif') do
   #     im_write("-negate")
   #     im_crop(200,100,20,10)
   #     im_resize(nil, 100, '>')
   #   end.should=="-negate -crop 200x100+20+10 +repage -resize 'x100>'"
-  #   F.exists?(@t.file_url(:map,'test2.gif',true)).should==true
+  #   F.exists?(@t.file_path(:map,'test2.gif',true)).should==true
   #   
   #   @t.image_magick(:map, 'test3.gif') do
   #     im_write("-negate")
   #     im_crop(200,100,20,10)
   #     im_resize(200, 100, '^')
   #   end.should=="-negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity center -extent 200x100"
-  #   F.exists?(@t.file_url(:map,'test3.gif',true)).should==true
+  #   F.exists?(@t.file_path(:map,'test3.gif',true)).should==true
   #   
   #   @t.image_magick(:map, 'test4.gif') do
   #     im_write("-negate")
   #     im_crop(200,100,20,10)
   #     im_resize(200, 100, '^', 'North')
   #   end.should=="-negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity North -extent 200x100"
-  #   F.exists?(@t.file_url(:map,'test4.gif',true)).should==true    
+  #   F.exists?(@t.file_path(:map,'test4.gif',true)).should==true    
   # end
   # 
   # it "Should be possible to overwrite the original image" do
   #   @t = Treasure.create(:map=>@img)
-  #   url = @t.file_url(:map,nil,true)
+  #   url = @t.file_path(:map,nil,true)
   #   size_before = F.size(url)
   #   @t.convert(:map, '-resize 100x75')
   #   F.size(url).should.not==size_before
