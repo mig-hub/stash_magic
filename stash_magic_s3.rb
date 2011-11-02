@@ -71,6 +71,12 @@ module StashMagicS3
     "#{file_path}/#{fn}"
   end
   
+  def s3object(attachment_name,style=nil)
+    u = file_url(attachment_name,style)
+    return nil if u.nil?
+    AWS::S3::S3Object.find(u, bucket)
+  end
+  
   # Build the image tag with all SEO friendly info
   # It's possible to add html attributes in a hash
   def build_image_tag(attachment_name, style=nil, html_attributes={})
@@ -146,7 +152,7 @@ module StashMagicS3
   def destroy_files_for(attachment_name, url=nil)
     url ||= file_url(attachment_name, nil)
     #D[url.sub(/\.[^.]+$/, '.*')].each {|f| FU.rm(f) }
-    AWS::S3::Bucket.objects(bucket, :prefix=>url.sub(/\.[^.]+$/, '')).each do |o|
+    AWS::S3::Bucket.objects(bucket, :prefix=>url.sub(/[^.]+$/, '')).each do |o|
       o.delete
     end
   end

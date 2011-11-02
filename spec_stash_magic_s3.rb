@@ -18,6 +18,8 @@ AWS::S3::Base.establish_connection!(
   :access_key_id     => ENV['S3_KEY'],
   :secret_access_key => ENV['S3_SECRET']
 )
+AWS::S3::Bucket.delete('campbellhay-stashmagictest', :force=>true)
+AWS::S3::Bucket.create('campbellhay-stashmagictest')
 
 class Treasure < ::Sequel::Model
   BUCKET = 'campbellhay-stashmagictest'
@@ -129,44 +131,48 @@ describe ::StashMagicS3 do
   it "Should save the attachments when creating entry" do
     @t = Treasure.create(:map => @img, :instructions => @pdf)
     @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
-    AWS::S3::S3Object.url_for(@t.file_url(:map), Treasure.bucket).should==true
     AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==true
     AWS::S3::S3Object.exists?(@t.file_url(:instructions), Treasure.bucket).should==true
-    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==true
-    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.pdf').should==true
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.stash_thumb.gif').should==false
   end
-  # 
-  # it "Should update attachment when updating entry" do
-  #   @t = Treasure.create(:map => @img).update(:map=>@img2)
-  #   @t.map.should=={:name=>'map.gif',:type=>'image/gif',:size=>7037}
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.gif').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==false
-  # end
-  # 
-  # it "Should destroy its folder when destroying entry" do
-  #   @t = Treasure.create(:map => @img)
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s).should==true
-  #   @t.destroy
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s).should==false
-  # end
-  # 
-  # it "Should be able to remove attachments when column is set to nil" do
-  #   @t = Treasure.create(:map => @img, :mappy => @img2)
-  #   @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
-  #   @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/mappy.gif').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
-  #   @t.update(:map=>nil)
-  #   @t.map.should==nil
-  #   @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.jpg').should==false
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/mappy.gif').should==true
-  #   F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==false
-  # end
+  
+  it "Should update attachment when updating entry" do
+    @t = Treasure.create(:map => @img).update(:map=>@img2)
+    @t.map.should=={:name=>'map.gif',:type=>'image/gif',:size=>7037}
+    AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_url(:map).sub(/gif/, 'jpg'), Treasure.bucket).should==false
+    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+  end
+  
+  it "Should be able to remove attachments when column is set to nil" do
+    @t = Treasure.create(:map => @img, :mappy => @img2)
+    @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
+    @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
+    # @t.file_url(:mappy).should=='j'
+    # AWS::S3::Bucket.objects(Treasure.bucket).map{|f|f.key}.should==''
+    AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==true
+    AWS::S3::S3Object.exists?(@t.file_url(:mappy), Treasure.bucket).should==true
+    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+    @t.update(:map=>nil)
+    @t.map.should==nil
+    @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
+    # AWS::S3::S3Object.exists?(@t.file_url(:map), Treasure.bucket).should==false
+    AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_url(:map)).should==false # https://github.com/marcel/aws-s3/issues/43
+    AWS::S3::S3Object.exists?(@t.file_url(:mappy), Treasure.bucket).should==true
+    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==false
+  end
+  
+  it "Should have a function to retrieve the S3Object" do
+    t = Treasure.exclude(:map=>nil).first
+    obj = Treasure.new.s3object(:map, 'imaginary.gif')
+    obj.should==nil
+    
+    lambda{ t.s3object(:map, 'imaginary.gif') }.should.raise(AWS::S3::NoSuchKey)
+
+    obj = t.s3object(:map)
+    obj.content_type.should=='image/jpeg'
+  end
   # 
   # it "Should be able to build image tags" do
   #   @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
