@@ -235,15 +235,15 @@ describe 'StashMagic S3' do
     lambda { @t = Treasure.create(:instructions=>nil) }.should.not.raise
     lambda { @t.update(:instructions=>nil) }.should.not.raise
   end
-  # 
-  # it "Should be possible to overwrite the original image" do
-  #   @t = Treasure.create(:map=>@img)
-  #   url = @t.file_path(:map,nil,true)
-  #   size_before = F.size(url)
-  #   @t.convert(:map, '-resize 100x75')
-  #   F.size(url).should.not==size_before
-  # end
-  # 
+  
+  it "Should be possible to overwrite the original image" do
+    @t = Treasure.create(:map=>@img)
+    url = @t.file_path(:map,nil)
+    size_before = AWS::S3::S3Object.find(url, Treasure.bucket).size
+    @t.convert(:map, '-resize 100x75')
+    AWS::S3::S3Object.find(url, Treasure.bucket).size.should.not==size_before
+  end
+  
   ::FileUtils.rm_rf(PUBLIC) if F.exists?(PUBLIC)
 
 end

@@ -42,7 +42,7 @@ module StashMagic
   
     def get_file(attachment_name, style=nil)
       u = file_path(attachment_name,style)
-      f = Tempfile.new("StashMagic", u)
+      f = Tempfile.new('StashMagic_src')
       f.binmode
       f.write(AWS::S3::S3Object.value(u, bucket))
       f.rewind
@@ -97,7 +97,7 @@ module StashMagic
       else
         src_path = get_file(attachment_name).path
       end
-      dest = Tempfile.new('StashMagic')
+      dest = Tempfile.new('StashMagic_dest')
       dest.binmode
       dest.close
       system "convert \"#{src_path}\" #{convert_steps} \"#{dest.path}\""
