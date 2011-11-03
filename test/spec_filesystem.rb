@@ -110,9 +110,10 @@ describe 'StashMagic Filesystem' do
     Treasure.new.file_root(true).should==Treasure::PUBLIC+'/stash/Treasure/tmp'
   end
   
-  # it "Should always raise on class.public_root if public_root is not declared" do
-  #   lambda { BadTreasure.new.file_root(true) }.should.raise(RuntimeError).message.should=='BadTreasure.public_root is not declared - Nothing can be stored'
-  # end
+  it "Should warn you when you have no storage chosen" do
+    lambda { Treasure.new.zzz }.should.raise(NoMethodError).message.should.not=='You have to choose a strorage system'
+    lambda { BadTreasure.new.public_root }.should.raise(NoMethodError).message.should=='You have to choose a strorage system'
+  end
   
   it "Should not raise on setters eval when value already nil" do
     Treasure.new.map.should==nil

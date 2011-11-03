@@ -118,9 +118,10 @@ describe 'StashMagic S3' do
     Treasure.new.file_root.should=='Treasure/tmp'
   end
   
-  # it "Should always raise on class.bucket if bucket is not declared" do
-  #   lambda { BadTreasure.new.bucket }.should.raise(RuntimeError).message.should=='BadTreasure.bucket is not declared - Nothing can be stored'
-  # end
+  it "Should warn you when you have no storage chosen" do
+    lambda { Treasure.new.zzz }.should.raise(NoMethodError).message.should.not=='You have to choose a strorage system'
+    lambda { BadTreasure.new.bucket }.should.raise(NoMethodError).message.should=='You have to choose a strorage system'
+  end
   
   it "Should not raise on setters eval when value already nil" do
     Treasure.new.map.should==nil
