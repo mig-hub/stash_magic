@@ -2,13 +2,15 @@
 
 = Stash Magic (BETA)
 
-Stash Magic provides a very simple interface for dealing with file system attachments in a database and help you with thumbnails or other styles via ImageMagick (hence, the name). Features are:
+Stash Magic provides a very simple interface for dealing with attachments on file system or Amazon S3 in a database and help you with thumbnails or other styles via ImageMagick (hence, the name). Features are:
 
 - Many attachments per database entry
 - ImageMagick string builder
-- after_stash hook for creating thumbnails or other styles automatically when attachment is created or updated.
+- `after_stash` hook for creating thumbnails or other styles automatically when attachment is created or updated.
+- `after_stash` hook also allow you to recreate all styles when you changed one
 - Specs for Sequel ORM but pretty easy to adapt
-- Easy to understand (one file) module 
+- Easy to understand (due to the lack of bells and whistles which makes it more dangerous as well. Gniark gniark.)
+- Storage on filesystem or Amazon S3
 
 This is still in Beta version built with simplicity in mind.
 It tries to do a lot with less code that anybody would be able to understand quickly.
@@ -20,15 +22,7 @@ So any test or help is welcome.
 
 = How to install
 
-  gem install stash-magic
-
-Use Sudo if you want to install it for all users of your server:
-
   sudo gem install stash-magic
-
-If you have Ruby 1.9, this is most likely that you have to replace the command gem by gem19:
-
-  sudo gem19 install stash-magic 
 
 = How to use
 
@@ -42,11 +36,24 @@ And then inside your model class, you have to include the module and declare whe
     include ::StashMagic
     self.public_root = ::File.expand_path(::File.dirname(__FILE__)+'/public')
   end
+
+Or if you want to use Amazon S3, replace `public_root` by `bucket:
+
+  class Treasure < ::Sequel::Model
+    include ::StashMagic
+    self.public_root = ::File.expand_path(::File.dirname(__FILE__)+'/public')
+  end
   
-The module has a method to do both in one line though:
+The module has a method to include and set it at once though:
 
   class Treasure < ::Sequel::Model
     ::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+  end
+
+Or for Amazon S3:
+
+  class Treasure < ::Sequel::Model
+    ::StashMagic.bucket 'my-bucket-on-amazon-s3'
   end
   
 After that, for each attachment you want, you need to have a column in the database as a string. And then you declare them with method Model#stash:
@@ -58,7 +65,7 @@ After that, for each attachment you want, you need to have a column in the datab
     stash :stamp
   end
   
-This method accepts an optional hash as a second argument which is not used by the module itself, but could be handy for you as you can have it in the stash reflection:
+This method accepts an optional hash as a second argument which could be handy for you as you can have it in the stash reflection:
 
   class Treasure < ::Sequel::Model
     ::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
@@ -73,6 +80,17 @@ The method Treasure.stash_reflection would return:
     :map => {}, 
     :stamp => {:accept_gif => false, :limit => 512000} 
   }
+
+It is also used for setting Amazon S3 in order to declare the options when storing.
+The key is `:s3_store_options`.
+For instance you can declare an attachment to be private (StashMagic uses :public_read by default):
+
+  class Treasure < ::Sequel::Model
+    ::StashMagic.with_public_root ::File.expand_path(::File.dirname(__FILE__)+'/public')
+    
+    stash :map
+    stash :stamp, :s3_store_options => { :access => :private }
+  end
   
 When building your html forms, just make sure that your stash inputs are of the type 'file', and StashMagic will deal with everything else. The getters will return a hash with the following values:
 
@@ -91,10 +109,12 @@ When you want to use attachment in your application, you can retrieve the file u
   @treasure_instance.file_url(:map)                # The original file
   @treasure_instance.file_url(:map, 'thumb.gif')   # The picture in a thumb.gif style (see next chapter to learn about styles)
   
-You might also want to do things on the server side like changing rights on the image or whatever. For that purpose, there is a third argument which is a boolean. When set to true, it will give you the absolute path to the file:
+You might also want to do things on the server side like changing rights on the image or whatever. For that purpose, there is a similar method `file_path` with a boolean. When set to true, it will give you the absolute path to the file (file system only):
 
-  @treasure_instance.file_url(:map, nil, true)            # /absolute/path/to/public/stash/Treasure/1/map.pdf
-  @treasure_instance.file_url(:map, 'thumb.gif', true)    # /absolute/path/to/public/stash/Treasure/1/map.thumb.gif
+  @treasure_instance.file_path(:map, nil, true)            # /absolute/path/to/public/stash/Treasure/1/map.pdf
+  @treasure_instance.file_path(:map, 'thumb.gif', true)    # /absolute/path/to/public/stash/Treasure/1/map.thumb.gif
+
+When using Amazon S3, there is a 3rd argument to `file_url` which is a boolean that says if you want ssl or not (false by default). Because the `file_url` is an absolute path when using S3.
   
 = Thumbnails and Other Styles
 
@@ -119,7 +139,7 @@ Even though StashMagic provides a builder for ImageMagick scripts, I suggest you
 - The builder is limited, not as complete as real ImageMagick ruby wrapper like RMagick
 - I like to believe it's fun as well (not only powerful)
 
-So for the couragous amongst you, here is the way you create a very simple style for the portrait attachment:
+So for the courageous amongst you, here is the way you create a very simple style for the portrait attachment:
 
   @treasure_instance.convert :portrait, '-resize 100x75', 'mini.gif'
   
@@ -192,7 +212,7 @@ Which will secretly do something like:
   
 = How to create thumbnails on the flight (The Hook)
 
-It is of course possible. StashMagic provides a hook called after_stash which takes the attachment_name as an argument. This hook is implemented by default and create automaticaly for every image a thumbnail called 'stash_thumb.gif'.
+It is of course possible. StashMagic provides a hook called after_stash which takes the attachment_name as an argument. This hook is implemented by default and create automatically for every image a thumbnail called 'stash_thumb.gif'.
 
 What you have to do is overwrite the hook. For example, say you want every attachment to have a 200x200 perfect squared version:
 
@@ -247,13 +267,15 @@ Please note that the class name is a simple #to_s. I've realized recently that m
   BootStrap
   BootsTrap 
 
+Amazon S3 filenames follow the same sort of logic.
+
 = More Details
 
 For more details, you can have a look at the specs to see how it's used or contact me on github if you have any question: http://github.com/mig-hub
 
 The project is speced with 
 - Bacon 1.1.0
-- Sequel 3.14.0
+- Sequel 3.19.0
 - ImageMagick 6.5.8
 
 = Change Log
