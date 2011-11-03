@@ -6,7 +6,7 @@ require 'fileutils'
 # - Easiest way to deal with folders (a bit like on our internal blog: the_wall)
 # - Another way to deal with convert styles so that you can interract with it after saving the images (cropping for example)
 # - Some facilities for pre-defined ImageMagick scripts
-module StashMagic
+module StashMagicFilesystem
   
   F = ::File
   D = ::Dir
@@ -62,7 +62,6 @@ module StashMagic
     into.stash_reflection = {}
   end
   
-  # Sugar
   def public_root
     raise "#{self.class}.public_root is not declared" if self.class.public_root.nil?
     self.class.public_root
@@ -179,7 +178,7 @@ module StashMagic
     # Include and declare public root in one go
     def with_public_root(location, into=nil)
       into ||= into_from_backtrace(caller)
-      into.__send__(:include, StashMagic)
+      into.__send__(:include, self)
       into.public_root = location
       into
     end

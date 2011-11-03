@@ -50,10 +50,13 @@ module StashMagicS3
     into.stash_reflection = {}
   end
   
-  # Sugar
   def bucket
     raise "#{self.class}.bucket is not declared" if self.class.bucket.nil?
     self.class.bucket
+  end
+  
+  def s3_store_options(attachment_name)
+    {:access=>:public_read}.update(self.class.stash_reflection[attachment_name][:s3_store_options]||{})
   end
   
   # This method the path for images of a specific style(original by default)
@@ -118,7 +121,7 @@ module StashMagicS3
     dest.binmode
     dest.close
     system "convert \"#{src_path}\" #{convert_steps} \"#{dest.path}\""
-    AWS::S3::S3Object.store(file_path(attachment_name,style), dest.open, bucket)
+    AWS::S3::S3Object.store(file_path(attachment_name,style), dest.open, bucket, s3_store_options(attachment_name))
   end
   
   def get_file(attachment_name, style=nil)
@@ -166,7 +169,7 @@ module StashMagicS3
       @tempfile_path.each do |k,v|
         url = file_path(k, nil)
         destroy_files_for(k, url) # Destroy previously saved files
-        AWS::S3::S3Object.store(url, open(v), bucket)
+        AWS::S3::S3Object.store(url, open(v), bucket, s3_store_options(k))
         after_stash(k)
       end
       # Reset in case we access two times the entry in the same session
@@ -200,7 +203,7 @@ module StashMagicS3
     # Include and declare public root in one go
     def with_bucket(bucket, into=nil)
       into ||= into_from_backtrace(caller)
-      into.__send__(:include, StashMagicS3)
+      into.__send__(:include, self)
       into.bucket = bucket
       into
     end

@@ -9,10 +9,11 @@ DB = Sequel.sqlite
 
 require 'tempfile'
 
-require F.dirname(__FILE__)+'/stash_magic_s3'
+$:.unshift(F.dirname(__FILE__)+'/../lib')
+require 'stash_magic_s3'
 
 # S3 credentials
-pseudo_env = File.join(F.dirname(__FILE__), 'private', 'pseudo_env.rb')
+pseudo_env = File.join(F.dirname(__FILE__), '..', 'private', 'pseudo_env.rb')
 load(pseudo_env) if File.exists?(pseudo_env)
 AWS::S3::Base.establish_connection!(
   :access_key_id     => ENV['S3_KEY'],
@@ -39,7 +40,7 @@ class Treasure < ::Sequel::Model
   
   stash :map
   stash :mappy
-  stash :instructions
+  stash :instructions, :s3_store_options=>{:access=>:private}
   
   def validate
     errors[:age] << "Not old enough" unless (self.age.nil? || self.age>10)
@@ -67,7 +68,7 @@ D.mkdir(PUBLIC) unless F.exists?(PUBLIC)
 # = Tests =
 # =========
 
-describe ::StashMagicS3 do
+describe 'StashMagic S3' do
   
   `convert rose: #{PUBLIC}/rose.jpg` unless F.exists?(PUBLIC+'/rose.jpg') # Use ImageMagick to build a tmp image to use
   `convert granite: #{PUBLIC}/granite.gif` unless F.exists?(PUBLIC+'/granite.gif') # Use ImageMagick to build a tmp image to use
@@ -92,6 +93,12 @@ describe ::StashMagicS3 do
     @img2 = mock_upload(PUBLIC+'/granite.gif', 'image/gif', true)
     @pdf = mock_upload(PUBLIC+'/rose.pdf', 'application/pdf', true)
     @pdf2 = mock_upload(PUBLIC+'/logo.pdf', 'application/pdf', true)
+  end
+  
+  it 'Should build S3 store options correctly' do
+    @t = Treasure.new
+    @t.s3_store_options(:map).should=={:access=>:public_read}
+    @t.s3_store_options(:instructions).should=={:access=>:private}
   end
   
   it 'Should Include via Stash::with_bucket' do

@@ -13,11 +13,12 @@ DB = Sequel.sqlite
 
 require 'tempfile'
 
-require F.dirname(__FILE__)+'/stash_magic'
+$:.unshift(F.dirname(__FILE__)+'/../lib')
+require 'stash_magic_filesystem'
 
 class Treasure < ::Sequel::Model
   PUBLIC = F.expand_path(F.dirname(__FILE__)+'/public')
-  ::StashMagic.with_public_root(PUBLIC)
+  ::StashMagicFilesystem.with_public_root(PUBLIC)
   
   plugin :schema
   set_schema do
@@ -42,7 +43,7 @@ class Treasure < ::Sequel::Model
 end
 
 class BadTreasure < ::Sequel::Model
-  include ::StashMagic
+  include ::StashMagicFilesystem
   
   plugin :schema
   set_schema do
@@ -60,7 +61,7 @@ D.mkdir(Treasure::PUBLIC) unless F.exists?(Treasure::PUBLIC)
 # = Tests =
 # =========
 
-describe ::StashMagic do
+describe 'StashMagic Filesystem' do
   
   `convert rose: #{Treasure::PUBLIC}/rose.jpg` unless F.exists?(Treasure::PUBLIC+'/rose.jpg') # Use ImageMagick to build a tmp image to use
   `convert granite: #{Treasure::PUBLIC}/granite.gif` unless F.exists?(Treasure::PUBLIC+'/granite.gif') # Use ImageMagick to build a tmp image to use
