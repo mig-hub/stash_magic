@@ -142,8 +142,8 @@ describe ::StashMagicS3 do
     @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
     AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==true
     AWS::S3::S3Object.exists?(@t.file_path(:instructions), Treasure.bucket).should==true
-    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
-    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/instructions.stash_thumb.gif').should==false
+    AWS::S3::S3Object.exists?(@t.file_path(:map, 'stash_thumb.gif'), Treasure.bucket).should==true
+    AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_path(:instructions, 'stash_thumb.gif')).should==false # https://github.com/marcel/aws-s3/issues/43
   end
   
   it "Should update attachment when updating entry" do
@@ -151,24 +151,23 @@ describe ::StashMagicS3 do
     @t.map.should=={:name=>'map.gif',:type=>'image/gif',:size=>7037}
     AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==true
     AWS::S3::S3Object.exists?(@t.file_path(:map).sub(/gif/, 'jpg'), Treasure.bucket).should==false
-    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+    AWS::S3::S3Object.exists?(@t.file_path(:map, 'stash_thumb.gif'), Treasure.bucket).should==true
   end
   
   it "Should be able to remove attachments when column is set to nil" do
     @t = Treasure.create(:map => @img, :mappy => @img2)
     @t.map.should=={:name=>'map.jpg',:type=>'image/jpeg',:size=>2074}
     @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
-    # @t.file_url(:mappy).should=='j'
-    # AWS::S3::Bucket.objects(Treasure.bucket).map{|f|f.key}.should==''
     AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==true
     AWS::S3::S3Object.exists?(@t.file_path(:mappy), Treasure.bucket).should==true
-    # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==true
+    AWS::S3::S3Object.exists?(@t.file_path(:map, 'stash_thumb.gif'), Treasure.bucket).should==true
     @t.update(:map=>nil)
     @t.map.should==nil
     @t.mappy.should=={:name=>'mappy.gif',:type=>'image/gif',:size=>7037}
     # AWS::S3::S3Object.exists?(@t.file_path(:map), Treasure.bucket).should==false
     AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_path(:map)).should==false # https://github.com/marcel/aws-s3/issues/43
     AWS::S3::S3Object.exists?(@t.file_path(:mappy), Treasure.bucket).should==true
+    AWS::S3::Bucket.objects(Treasure.bucket).map{|o|o.key}.member?(@t.file_path(:map, 'stash_thumb.gif')).should==false # https://github.com/marcel/aws-s3/issues/43
     # F.exists?(Treasure::PUBLIC+'/stash/Treasure/'+@t.id.to_s+'/map.stash_thumb.gif').should==false
   end
   

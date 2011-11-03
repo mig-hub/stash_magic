@@ -107,8 +107,29 @@ module StashMagicS3
   # ===============
   # Basic
   def convert(attachment_name, convert_steps="", style=nil)
-    system "convert \"#{file_path(attachment_name, nil, true)}\" #{convert_steps} \"#{file_path(attachment_name, style, true)}\""
+    @tempfile_path ||= {}
+    tempfile_path = @tempfile_path[attachment_name.to_sym]
+    if !tempfile_path.nil? && F.exists?(tempfile_path)
+      src_path = tempfile_path
+    else
+      src_path = get_file(attachment_name).path
+    end
+    dest = Tempfile.new('StashMagic')
+    dest.binmode
+    dest.close
+    system "convert \"#{src_path}\" #{convert_steps} \"#{dest.path}\""
+    AWS::S3::S3Object.store(file_path(attachment_name,style), dest.open, bucket)
   end
+  
+  def get_file(attachment_name, style=nil)
+    u = file_path(attachment_name,style)
+    f = Tempfile.new("StashMagic", u)
+    f.binmode
+    f.write(AWS::S3::S3Object.value(u, bucket))
+    f.rewind
+    f
+  end
+  
   # IM String builder
   def image_magick(attachment_name, style=nil, &block)
     @image_magick_strings = []
@@ -146,7 +167,7 @@ module StashMagicS3
         url = file_path(k, nil)
         destroy_files_for(k, url) # Destroy previously saved files
         AWS::S3::S3Object.store(url, open(v), bucket)
-        #after_stash(k)
+        after_stash(k)
       end
       # Reset in case we access two times the entry in the same session
       # Like setting an attachment and destroying it in a row
