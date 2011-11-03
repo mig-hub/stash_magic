@@ -10,7 +10,7 @@ DB = Sequel.sqlite
 require 'tempfile'
 
 $:.unshift(F.dirname(__FILE__)+'/../lib')
-require 'stash_magic_s3'
+require 'stash_magic'
 
 # S3 credentials
 pseudo_env = File.join(F.dirname(__FILE__), '..', 'private', 'pseudo_env.rb')
@@ -24,7 +24,7 @@ AWS::S3::Bucket.create('campbellhay-stashmagictest')
 
 class Treasure < ::Sequel::Model
   BUCKET = 'campbellhay-stashmagictest'
-  ::StashMagicS3.with_bucket(BUCKET)
+  ::StashMagic.with_bucket(BUCKET)
   
   plugin :schema
   set_schema do
@@ -49,7 +49,7 @@ class Treasure < ::Sequel::Model
 end
 
 class BadTreasure < ::Sequel::Model
-  include ::StashMagicS3
+  include ::StashMagic
   
   plugin :schema
   set_schema do
@@ -118,9 +118,9 @@ describe 'StashMagic S3' do
     Treasure.new.file_root.should=='Treasure/tmp'
   end
   
-  it "Should always raise on class.bucket if bucket is not declared" do
-    lambda { BadTreasure.new.bucket }.should.raise(RuntimeError).message.should=='BadTreasure.bucket is not declared'
-  end
+  # it "Should always raise on class.bucket if bucket is not declared" do
+  #   lambda { BadTreasure.new.bucket }.should.raise(RuntimeError).message.should=='BadTreasure.bucket is not declared - Nothing can be stored'
+  # end
   
   it "Should not raise on setters eval when value already nil" do
     Treasure.new.map.should==nil
@@ -139,9 +139,11 @@ describe 'StashMagic S3' do
     # Original with no file - so we are not sure about extention
     Treasure.new.file_url(:map).should==nil
     # Original with file but not saved
-    Treasure.new(:map=>@img).file_url(:map).should=='https://s3.amazonaws.com/campbellhay-stashmagictest/Treasure/tmp/map.jpg'
+    Treasure.new(:map=>@img).file_url(:map).should=='http://s3.amazonaws.com/campbellhay-stashmagictest/Treasure/tmp/map.jpg'
+    # Same with SSL
+    Treasure.new(:map=>@img).file_url(:map, nil, true).should=='https://s3.amazonaws.com/campbellhay-stashmagictest/Treasure/tmp/map.jpg'
     # Style with file but not saved
-    Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='https://s3.amazonaws.com/campbellhay-stashmagictest/Treasure/tmp/map.thumb.jpg' #not the right extention
+    Treasure.new(:map=>@img).file_url(:map, 'thumb.jpg').should=='http://s3.amazonaws.com/campbellhay-stashmagictest/Treasure/tmp/map.thumb.jpg' #not the right extention
   end
   
   it "Should save the attachments when creating entry" do
@@ -193,7 +195,7 @@ describe 'StashMagic S3' do
     @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
     tag = @t.build_image_tag(:map)
     tag.should.match(/^<img\s.+\s\/>$/)
-    tag.should.match(/\ssrc="https:\/\/s3.amazonaws.com\/campbellhay-stashmagictest\/Treasure\/#{@t.id}\/map.jpg"\s/)
+    tag.should.match(/\ssrc="http:\/\/s3.amazonaws.com\/campbellhay-stashmagictest\/Treasure\/#{@t.id}\/map.jpg"\s/)
     tag.should.match(/\salt="Wonderful"\s/)
     tag.should.match(/\stitle=""\s/)
   end
@@ -202,7 +204,7 @@ describe 'StashMagic S3' do
     @t = Treasure.create(:map => @img, :map_alternative_text => "Wonderful")
     tag = @t.build_image_tag(:map,nil,:alt => 'Amazing & Beautiful Map')
     tag.should.match(/^<img\s.+\s\/>$/)
-    tag.should.match(/\ssrc="https:\/\/s3.amazonaws.com\/campbellhay-stashmagictest\/Treasure\/#{@t.id}\/map.jpg"\s/)
+    tag.should.match(/\ssrc="http:\/\/s3.amazonaws.com\/campbellhay-stashmagictest\/Treasure\/#{@t.id}\/map.jpg"\s/)
     tag.should.match(/\salt="Amazing &amp; Beautiful Map"\s/)
     tag.should.match(/\stitle=""\s/)
   end

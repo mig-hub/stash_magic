@@ -63,7 +63,7 @@ module StashMagicFilesystem
   end
   
   def public_root
-    raise "#{self.class}.public_root is not declared" if self.class.public_root.nil?
+    raise "#{self.class}.public_root is not declared - Nothing can be stored" if self.class.public_root.nil?
     self.class.public_root
   end
   

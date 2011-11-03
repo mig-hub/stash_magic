@@ -51,7 +51,7 @@ module StashMagicS3
   end
   
   def bucket
-    raise "#{self.class}.bucket is not declared" if self.class.bucket.nil?
+    raise "#{self.class}.bucket is not declared - Nothing can be stored" if self.class.bucket.nil?
     self.class.bucket
   end
   
@@ -79,10 +79,10 @@ module StashMagicS3
   # But it only gives a URL with no credentials, when the file is public
   # Otherwise it is better to use Model#s3object.url
   # Careful with the later if you have private files
-  def file_url(attachment_name, style=nil)
+  def file_url(attachment_name, style=nil, ssl=false)
     f = file_path(attachment_name, style)
     return nil if f.nil?
-    "https://s3.amazonaws.com/#{bucket}/#{f}"
+    "http#{'s' if ssl}://s3.amazonaws.com/#{bucket}/#{f}"
   end
   
   def s3object(attachment_name,style=nil)
@@ -195,8 +195,9 @@ module StashMagicS3
   
   def after_destroy
     super rescue nil
-    p = file_root(true)
-    FU.rm_rf(p) if F.exists?(p)
+    AWS::S3::Bucket.objects(bucket, :prefix=>file_root).each do |o|
+      o.delete
+    end
   end
   
   class << self
