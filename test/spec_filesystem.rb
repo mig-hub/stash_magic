@@ -1,7 +1,3 @@
-# =========
-# = Setup =
-# =========
-
 F = ::File
 D = ::Dir
 
@@ -213,38 +209,6 @@ describe 'StashMagic Filesystem' do
   it "Should not raise when the setter tries to destroy files when there is nothing to destroy" do
     lambda { @t = Treasure.create(:instructions=>nil) }.should.not.raise
     lambda { @t.update(:instructions=>nil) }.should.not.raise
-  end
-  
-  it "Should have ImageMagick string builder" do
-    @t = Treasure.create(:map=>@img)
-    
-    @t.image_magick(:map, 'test.gif') do
-      im_write("-negate")
-      im_crop(200,100,20,10)
-      im_resize(nil, 100)
-    end.should=="-negate -crop 200x100+20+10 +repage -resize 'x100'"
-    F.exists?(@t.file_path(:map,'test.gif',true)).should==true
-    
-    @t.image_magick(:map, 'test2.gif') do
-      im_write("-negate")
-      im_crop(200,100,20,10)
-      im_resize(nil, 100, '>')
-    end.should=="-negate -crop 200x100+20+10 +repage -resize 'x100>'"
-    F.exists?(@t.file_path(:map,'test2.gif',true)).should==true
-    
-    @t.image_magick(:map, 'test3.gif') do
-      im_write("-negate")
-      im_crop(200,100,20,10)
-      im_resize(200, 100, '^')
-    end.should=="-negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity center -extent 200x100"
-    F.exists?(@t.file_path(:map,'test3.gif',true)).should==true
-    
-    @t.image_magick(:map, 'test4.gif') do
-      im_write("-negate")
-      im_crop(200,100,20,10)
-      im_resize(200, 100, '^', 'North')
-    end.should=="-negate -crop 200x100+20+10 +repage -resize '200x100^' -gravity North -extent 200x100"
-    F.exists?(@t.file_path(:map,'test4.gif',true)).should==true    
   end
   
   it "Should be possible to overwrite the original image" do
