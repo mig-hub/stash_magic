@@ -245,6 +245,14 @@ describe 'StashMagic S3' do
     AWS::S3::S3Object.find(url, Treasure.bucket).size.should.not==size_before
   end
   
+  it "Should be able to re-run all the after_stash in one method" do
+    @t = Treasure.create(:map=>@img)
+    url = @t.file_path(:map,'stash_thumb.gif')
+    time_before = AWS::S3::S3Object.find(url, Treasure.bucket).about['last-modified']
+    StashMagic.all_after_stash
+    AWS::S3::S3Object.find(url, Treasure.bucket).about['last-modified'].should.not==time_before
+  end
+  
   ::FileUtils.rm_rf(PUBLIC) if F.exists?(PUBLIC)
 
 end

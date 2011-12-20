@@ -212,7 +212,7 @@ Which will secretly do something like:
   
 = How to create thumbnails on the flight (The Hook)
 
-It is of course possible. StashMagic provides a hook called after_stash which takes the attachment_name as an argument. This hook is implemented by default and create automatically for every image a thumbnail called 'stash_thumb.gif'.
+It is of course possible. StashMagic provides a hook called `after_stash` which takes the attachment_name as an argument. This hook is implemented by default and create automatically for every image a thumbnail called 'stash_thumb.gif'.
 
 What you have to do is overwrite the hook. For example, say you want every attachment to have a 200x200 perfect squared version:
 
@@ -235,6 +235,24 @@ This is done by using `nil` as a style:
   def after_stash(attachment_name)
     image_magick(attachment_name) { im_resize(400,300) }
   end
+
+= More about `after_stash` hook
+
+If you need to reprocess all the images for a specific attachment, you can use the hook manually:
+
+    @my_instance.after_stash(:illustration)
+
+Now if you want to do it on all the instances of the class:
+
+    MyModelClass.all{ |i| i.after_stash(:illustration) }
+
+But you might want to do the same for all attachments:
+
+    MyModelClass.all{ |i| MyModelClass.stash_reflection.keys.each { |k| i.after_stash(k) } }
+
+And finally there is a simple method that does the same for all the Classes using StashMagic:
+
+    StashMagic.all_after_stash
 
 = How my files are then saved on my file system
 
@@ -269,6 +287,10 @@ Please note that the class name is a simple #to_s. I've realized recently that m
 
 Amazon S3 filenames follow the same sort of logic.
 
+= Reprocess your thumbnails
+
+Sometimes you need to change your `after_stash`
+
 = More Details
 
 For more details, you can have a look at the specs to see how it's used or contact me on github if you have any question: http://github.com/mig-hub
@@ -287,6 +309,7 @@ The project is speced with
 - 0.0.7   Make it possible to overwrite the original image with another style in after_stash
 - 0.0.8   Default thumb does not break when file name has signs in the name
 - 0.0.9   Fix a bug when Model#build_image_tag uses a symbol for the attachment name
+- 0.1.0   Now with the option to use S3 instead of file system and a method to reprocess thumbnails
 
 == Copyright
 

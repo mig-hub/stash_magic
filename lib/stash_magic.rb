@@ -15,6 +15,9 @@ module StashMagic
   # ====================
   
   class << self
+    attr_accessor :classes
+    StashMagic.classes = []
+    
     # Include and declare public root in one go
     def with_public_root(location, into=nil)
       into ||= into_from_backtrace(caller)
@@ -37,6 +40,17 @@ module StashMagic
       F.readlines(filename)[0..lineno.to_i].reverse.find{|ln| ln =~ regexp }
       const_get($1)
     end
+    
+    def all_after_stash
+      StashMagic.classes.each do |m|
+        m.all do |i|
+          m.stash_reflection.keys.each do |k|
+            i.after_stash(k)
+          end
+        end
+      end
+    end
+    
   end
   
   # ============
@@ -44,6 +58,8 @@ module StashMagic
   # ============
   
   def self.included(into)
+    
+    StashMagic.classes << into
     
     class << into
       attr_accessor :stash_reflection, :storage

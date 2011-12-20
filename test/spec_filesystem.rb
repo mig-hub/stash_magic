@@ -92,6 +92,10 @@ describe 'StashMagic Filesystem' do
     F.exists?(Treasure::PUBLIC+'/stash/Treasure').should==true
   end
   
+  it 'Should keep a list of Classes that included it' do
+    StashMagic.classes.should==[Treasure, BadTreasure]
+  end
+  
   it "Should stash entries with Class::stash and have reflection" do
     Treasure.stash_reflection.keys.include?(:map).should==true
     Treasure.stash_reflection.keys.include?(:instructions).should==true
@@ -218,6 +222,14 @@ describe 'StashMagic Filesystem' do
     size_before = F.size(url)
     @t.convert(:map, '-resize 100x75')
     F.size(url).should.not==size_before
+  end
+  
+  it "Should be able to re-run all the after_stash in one method" do
+    @t = Treasure.create(:map=>@img)
+    url = @t.file_path(:map,'stash_thumb.gif',true)
+    time_before = F.mtime(url)
+    StashMagic.all_after_stash
+    F.mtime(url).should.not==time_before
   end
   
   ::FileUtils.rm_rf(Treasure::PUBLIC) if F.exists?(Treasure::PUBLIC)
