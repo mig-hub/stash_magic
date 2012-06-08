@@ -1,7 +1,5 @@
 module StashMagic
   module StorageS3
-    
-    require 'aws/s3'
   
     # ===========
     # = Helpers =

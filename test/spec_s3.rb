@@ -10,6 +10,7 @@ DB = Sequel.sqlite
 require 'tempfile'
 
 $:.unshift(F.dirname(__FILE__)+'/../lib')
+require 'aws/s3'
 require 'stash_magic'
 
 # S3 credentials
